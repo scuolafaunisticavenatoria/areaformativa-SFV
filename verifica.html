@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verifica Attestato — Scuola Faunistica Venatoria</title>
+<meta name="description" content="Verifica l'autenticità di un attestato emesso dalla Scuola Faunistica Venatoria.">
+<meta name="robots" content="index, follow">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Tabler Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-900: #0B1A06;
+    --green-800: #16290D;
+    --green-700: #234A14;
+    --green-600: #33651C;
+    --green-500: #47802A;
+    --green-400: #6BAF4A;
+    --green-300: #97C459;
+    --green-200: #C7DDA6;
+    --green-100: #E9F1DF;
+    --green-50:  #F6F8F1;
+    --gold-700:  #8A5E22;
+    --gold-600:  #A9762F;
+    --gold-500:  #C5923F;
+    --gold-400:  #D4A855;
+    --gold-300:  #E3BD75;
+    --gold-100:  #F8ECD4;
+    --red-700:   #A32D2D;
+    --red-200:   #F09595;
+    --red-100:   #FCEBEB;
+    --amber-700: #854F0B;
+    --amber-200: #FAC775;
+    --amber-100: #FAEEDA;
+    --bg:        #F8F6F0;
+    --surface:   #FFFFFF;
+    --border:    #DDD9C9;
+    --border-light: #EAE7DA;
+    --text-primary:   #1B2414;
+    --text-secondary: #5C6450;
+    --text-muted:     #8C9180;
+    --font-display: 'Fraunces', serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'DM Mono', monospace;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --shadow-sm: 0 1px 3px rgba(14,26,9,.08);
+    --shadow-md: 0 6px 20px rgba(14,26,9,.10);
+    --shadow-lg: 0 12px 36px rgba(14,26,9,.14);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    background: linear-gradient(135deg, var(--green-900) 0%, #091206 100%);
+    border-bottom: 2px solid var(--gold-500);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .site-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+  }
+  .site-header-logo {
+    width: 48px;
+    height: 48px;
+    background: rgba(229,189,117,.12);
+    border: 1px solid rgba(229,189,117,.25);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .site-header-logo i { font-size: 24px; color: var(--gold-300); }
+  .site-header-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .site-header-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,.45);
+    letter-spacing: .04em;
+    margin-top: 2px;
+  }
+  .site-header-back {
+    font-size: 12px;
+    color: rgba(255,255,255,.55);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color .15s;
+  }
+  .site-header-back:hover { color: var(--gold-300); }
+
+  /* ── Main content ── */
+  .main {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px 64px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 560px;
+    overflow: hidden;
+  }
+
+  /* ── Card header ── */
+  .card-hero {
+    background: linear-gradient(135deg, var(--green-800) 0%, var(--green-900) 100%);
+    padding: 36px 32px 32px;
+    text-align: center;
+    position: relative;
+  }
+  .card-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold-400) 30%, var(--gold-300) 50%, var(--gold-400) 70%, transparent);
+  }
+  .hero-icon {
+    width: 72px; height: 72px;
+    background: rgba(229,189,117,.15);
+    border: 2px solid rgba(229,189,117,.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .hero-icon i { font-size: 34px; color: var(--gold-300); }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,.6);
+    line-height: 1.6;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  /* ── Card body ── */
+  .card-body { padding: 32px; }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    margin-bottom: 7px;
+  }
+  .field-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: .08em;
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    text-transform: uppercase;
+  }
+  .field-input:focus {
+    border-color: var(--green-500);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(71,128,42,.12);
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .btn-verify {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--green-700), var(--green-500));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn-verify:hover { opacity: .92; }
+  .btn-verify:active { transform: scale(.98); }
+  .btn-verify:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-verify i { font-size: 18px; }
+
+  /* ── Result ── */
+  #result { margin-top: 24px; display: none; }
+
+  .result-valid {
+    background: var(--green-100);
+    border: 1.5px solid var(--green-300);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+  .result-valid-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--green-200);
+  }
+  .result-valid-icon {
+    width: 44px; height: 44px;
+    background: var(--green-500);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .result-valid-icon i { font-size: 22px; color: #fff; }
+  .result-valid-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--green-700);
+  }
+  .result-valid-sub { font-size: 12px; color: var(--green-600); margin-top: 2px; }
+
+  .result-rows { display: flex; flex-direction: column; gap: 8px; }
+  .result-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .result-row-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 110px;
+    flex-shrink: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .result-row-value { color: var(--text-primary); font-size: 14px; }
+  .result-row-value.mono { font-family: var(--font-mono); font-weight: 600; font-size: 13px; }
+
+  .result-stamp {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--green-200);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--green-600);
+  }
+
+  .result-invalid {
+    background: var(--red-100);
+    border: 1.5px solid var(--red-200);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .result-invalid i { font-size: 28px; color: var(--red-700); flex-shrink: 0; margin-top: 2px; }
+  .result-invalid-title { font-weight: 700; color: var(--red-700); font-size: 15px; margin-bottom: 4px; }
+  .result-invalid-sub { font-size: 13px; color: var(--red-700); line-height: 1.5; }
+
+  .result-revoked {
+    background: var(--amber-100);
+    border: 1.5px solid var(--amber-200);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .result-revoked i { font-size: 28px; color: var(--amber-700); flex-shrink: 0; margin-top: 2px; }
+  .result-revoked-title { font-weight: 700; color: var(--amber-700); font-size: 15px; margin-bottom: 4px; }
+  .result-revoked-sub { font-size: 13px; color: var(--amber-700); line-height: 1.5; }
+
+  .result-error {
+    background: var(--red-100);
+    border: 1px solid var(--red-200);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--red-700);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ── Info box ── */
+  .info-box {
+    margin-top: 28px;
+    padding: 16px 18px;
+    background: var(--gold-100);
+    border: 1px solid rgba(197,146,63,.25);
+    border-radius: var(--radius-lg);
+    font-size: 12px;
+    color: var(--gold-700);
+    line-height: 1.6;
+  }
+  .info-box strong { font-weight: 700; }
+
+  /* ── Footer ── */
+  .site-footer {
+    text-align: center;
+    padding: 28px 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-light);
+    background: var(--surface);
+    line-height: 1.7;
+  }
+  .site-footer a { color: var(--green-600); text-decoration: none; }
+  .site-footer a:hover { text-decoration: underline; }
+
+  /* ── Loader spinner ── */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .main { padding: 24px 12px 48px; }
+    .card-hero { padding: 28px 20px 24px; }
+    .card-body { padding: 24px 20px; }
+    .hero-title { font-size: 22px; }
+    .result-row { flex-direction: column; gap: 2px; }
+    .result-row-label { min-width: unset; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <a href="https://www.scuolafaunisticavenatoria.it" class="site-header-brand" target="_blank">
+    <div class="site-header-logo">
+      <i class="ti ti-feather"></i>
+    </div>
+    <div>
+      <div class="site-header-name">Scuola Faunistica Venatoria</div>
+      <div class="site-header-sub">Verifica Attestati — Servizio Pubblico</div>
+    </div>
+  </a>
+  <a href="https://www.scuolafaunisticavenatoria.it" class="site-header-back" target="_blank">
+    <i class="ti ti-arrow-left" style="font-size:13px"></i> Sito web
+  </a>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="card">
+
+    <!-- Hero -->
+    <div class="card-hero">
+      <div class="hero-icon">
+        <i class="ti ti-certificate"></i>
+      </div>
+      <div class="hero-title">Verifica Attestato</div>
+      <div class="hero-sub">
+        Strumento ufficiale per verificare l'autenticità di un attestato
+        emesso dalla Scuola Faunistica Venatoria.
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <label for="num-input" class="field-label">Numero attestato</label>
+      <input
+        id="num-input"
+        class="field-input"
+        type="text"
+        placeholder="Es. SFV-2026-0042"
+        maxlength="30"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\-]/g,'')"
+        onkeydown="if(event.key==='Enter')doVerifica()"
+      >
+      <div class="field-hint">
+        <i class="ti ti-info-circle" style="font-size:11px;vertical-align:-1px"></i>
+        Il numero si trova in basso a destra nell'attestato (es. <strong>SFV-2026-0042</strong>)
+      </div>
+
+      <button class="btn-verify" id="btn-verify" onclick="doVerifica()">
+        <i class="ti ti-search"></i> Verifica autenticità
+      </button>
+
+      <!-- Result area -->
+      <div id="result"></div>
+
+      <!-- Info box -->
+      <div class="info-box">
+        <strong><i class="ti ti-shield-check" style="font-size:13px;vertical-align:-1px;margin-right:4px"></i>Come funziona</strong><br>
+        Inserisci il numero attestato e premi "Verifica". Il sistema controlla
+        in tempo reale nel registro ufficiale della Scuola Faunistica Venatoria.
+        Per motivi di privacy, il nome completo del titolare non viene visualizzato.
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+  Servizio di verifica ufficiale — <strong>Scuola Faunistica Venatoria</strong><br>
+  Per informazioni o segnalazioni:
+  <a href="mailto:info@scuolafaunisticavenatoria.it">info@scuolafaunisticavenatoria.it</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.scuolafaunisticavenatoria.it" target="_blank">www.scuolafaunisticavenatoria.it</a><br>
+  <span style="font-size:10px;color:var(--text-muted);margin-top:4px;display:block">
+    © Scuola Faunistica Venatoria · P.IVA — · Tutti i diritti riservati
+  </span>
+</footer>
+
+<!-- Firebase + Logic -->
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyCMR9oAaZztDWvHUrEb5D4QUjQE4oen9k",
+  authDomain:        "scuola-faunistica-venatoria.firebaseapp.com",
+  projectId:         "scuola-faunistica-venatoria",
+  storageBucket:     "scuola-faunistica-venatoria.firebasestorage.app",
+  messagingSenderId: "191150375225",
+  appId:             "1:191150375225:web:e3295a70acc9a425d368e8"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Leggi numero da URL se passato come ?n=SFV-2026-0042
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const n = params.get('n') || params.get('num') || params.get('attestato');
+  if (n) {
+    const input = document.getElementById('num-input');
+    input.value = n.toUpperCase().replace(/[^A-Z0-9\-]/g,'');
+    doVerifica();
+  }
+});
+
+async function doVerifica() {
+  const input  = document.getElementById('num-input');
+  const result = document.getElementById('result');
+  const btn    = document.getElementById('btn-verify');
+  const num    = (input.value || '').trim().toUpperCase();
+
+  if (!num) {
+    input.focus();
+    input.style.borderColor = 'var(--red-700)';
+    setTimeout(() => input.style.borderColor = '', 1200);
+    return;
+  }
+
+  // Loading state
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Verifica in corso…';
+  result.style.display = 'none';
+  result.innerHTML = '';
+
+  try {
+    const snap = await db.collection('certificates').doc(num).get();
+
+    if (!snap.exists) {
+      result.style.display = 'block';
+      result.innerHTML = `
+        <div class="result-invalid">
+          <i class="ti ti-x-circle"></i>
+          <div>
+            <div class="result-invalid-title">Attestato non trovato</div>
+            <div class="result-invalid-sub">
+              Il numero <strong>${escHtml(num)}</strong> non corrisponde ad alcun
+              attestato emesso dalla Scuola Faunistica Venatoria.<br><br>
+              Controlla che il numero sia stato inserito correttamente oppure
+              contatta la scuola per assistenza.
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const d = snap.data();
+
+    if (!d.valid) {
+      result.style.display = 'block';
+      result.innerHTML = `
+        <div class="result-revoked">
+          <i class="ti ti-alert-triangle"></i>
+          <div>
+            <div class="result-revoked-title">Attestato revocato</div>
+            <div class="result-revoked-sub">
+              L'attestato <strong>${escHtml(num)}</strong> risulta
+              <strong>revocato</strong> dalla Scuola Faunistica Venatoria.<br>
+              Per maggiori informazioni contattare la segreteria.
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // ── Attestato valido ──────────────────────────────────────
+    // Mostra solo iniziali per privacy
+    const fullName = d.studentName || '';
+    const parts    = fullName.trim().split(/\s+/);
+    const initials = parts.map(p => (p[0]||'').toUpperCase() + '.').join(' ');
+
+    const dataRilascio = d.issuedAtISO
+      ? new Date(d.issuedAtISO).toLocaleDateString('it-IT', {
+          day: '2-digit', month: 'long', year: 'numeric'
+        })
+      : '—';
+
+    const specializzazioni = d.specializzazioni && d.specializzazioni.length
+      ? d.specializzazioni.join(', ')
+      : null;
+
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div class="result-valid">
+        <div class="result-valid-header">
+          <div class="result-valid-icon">
+            <i class="ti ti-circle-check"></i>
+          </div>
+          <div>
+            <div class="result-valid-title">✓ Attestato autentico e valido</div>
+            <div class="result-valid-sub">
+              Verificato nel registro ufficiale della Scuola Faunistica Venatoria
+            </div>
+          </div>
+        </div>
+
+        <div class="result-rows">
+          <div class="result-row">
+            <span class="result-row-label">N° attestato</span>
+            <span class="result-row-value mono">${escHtml(d.certNum || num)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-row-label">Intestatario</span>
+            <span class="result-row-value" style="font-weight:600">${escHtml(initials)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-row-label">Corso</span>
+            <span class="result-row-value">${escHtml(d.courseName || '—')}</span>
+          </div>
+          ${specializzazioni ? `
+          <div class="result-row">
+            <span class="result-row-label">Specializzazioni</span>
+            <span class="result-row-value">${escHtml(specializzazioni)}</span>
+          </div>` : ''}
+          <div class="result-row">
+            <span class="result-row-label">Data rilascio</span>
+            <span class="result-row-value">${escHtml(dataRilascio)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-row-label">Emesso da</span>
+            <span class="result-row-value">Scuola Faunistica Venatoria</span>
+          </div>
+        </div>
+
+        <div class="result-stamp">
+          <i class="ti ti-shield-check" style="font-size:16px;flex-shrink:0"></i>
+          Attestato verificato il ${new Date().toLocaleDateString('it-IT', {
+            day: '2-digit', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          })}
+        </div>
+      </div>`;
+
+  } catch (e) {
+    console.error('verifica error', e);
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div class="result-error">
+        <i class="ti ti-alert-circle" style="font-size:20px;flex-shrink:0"></i>
+        Errore di connessione. Controlla la rete e riprova.
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-search"></i> Verifica autenticità';
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>
