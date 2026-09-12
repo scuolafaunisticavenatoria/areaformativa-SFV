@@ -366,6 +366,15 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 .sd-tab.active{color:var(--green-700);border-bottom-color:var(--green-600);font-weight:600}
 
 /* ─── Chat ────────────────────────────────────────────── */
+.quiz-highlight{display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:14px 18px;border-radius:var(--radius-lg);text-decoration:none;color:#fff;background:linear-gradient(120deg,var(--green-700),var(--green-800));box-shadow:0 6px 18px rgba(35,74,20,.28);transition:transform .15s,box-shadow .15s}
+.quiz-highlight:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(35,74,20,.34)}
+.quiz-highlight-logo{width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--gold-400);background:#F3ECD9}
+.quiz-highlight-body{flex:1;min-width:0}
+.quiz-highlight-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.quiz-highlight-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:var(--gold-500);color:#3a2800;padding:2px 8px;border-radius:var(--radius-full)}
+.quiz-highlight-sub{font-size:12px;color:rgba(255,255,255,.86);margin-top:3px}
+.quiz-highlight-cta{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--green-800);font-weight:700;font-size:13px;padding:9px 16px;border-radius:var(--radius-full)}
+@media(max-width:560px){.quiz-highlight{flex-wrap:wrap}.quiz-highlight-cta{width:100%;justify-content:center}}
 .chat-box{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-md);height:calc(100vh - 280px);min-height:320px}
 .chat-messages{flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:12px;
   background:radial-gradient(circle at 1px 1px,rgba(35,74,20,.05) 1px,transparent 0) 0 0/22px 22px,linear-gradient(180deg,#fbfcf8,var(--bg))}
@@ -395,6 +404,12 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 .chat-newdiv::before,.chat-newdiv::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-400),transparent)}
 .chat-newdiv span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;background:var(--gold-100);color:var(--gold-700);padding:2px 10px;border-radius:var(--radius-full);white-space:nowrap}
 .grp-unread-pill{background:var(--green-500);color:#fff;border-radius:var(--radius-full);font-size:11px;font-weight:700;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-notice{display:flex;align-items:flex-start;gap:10px;margin:0 0 12px;padding:11px 14px;border-radius:var(--radius-lg);background:linear-gradient(180deg,#fffdf5,var(--gold-100));border:1px solid var(--gold-400);color:var(--green-800);font-size:12.5px;line-height:1.5}
+.chat-notice i{font-size:18px;color:var(--gold-700);flex-shrink:0;margin-top:1px}
+.chat-notice a{color:var(--green-700);font-weight:700;text-decoration:none;white-space:nowrap}
+.chat-notice a:hover{text-decoration:underline}
+.cert-hint{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:12px 16px;border-radius:var(--radius-lg);background:linear-gradient(180deg,#fbfdf7,var(--green-50));border:1px dashed var(--green-300);color:var(--green-800);font-size:12.5px;line-height:1.5}
+.cert-hint i{font-size:18px;color:var(--gold-700);flex-shrink:0;margin-top:1px}
 
 .chat-input-bar{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-top:1px solid var(--border-light);background:var(--surface);flex-shrink:0}
 .chat-input{flex:1;border:1.5px solid var(--border);border-radius:var(--radius-full);padding:10px 16px;font-size:13.5px;font-family:inherit;resize:none;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;max-height:120px;overflow-y:auto;line-height:1.5;background:var(--bg)}
@@ -1362,7 +1377,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
           <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:22px;box-shadow:var(--shadow-sm)">
             <div class="alert-box" style="margin-bottom:18px;background:var(--gold-100);border-color:var(--gold-300);color:var(--gold-700)">
               <i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0"></i>
-              <p>Quando uno studente completa il 100% di un corso, appare automaticamente il pulsante <strong>Scarica Attestato</strong> nella sua area personale. Il PDF viene generato nel browser e non richiede servizi esterni.</p>
+              <p>Quando uno studente raggiunge l'<strong>80%</strong> di un corso, appare automaticamente il pulsante <strong>Scarica Attestato</strong> nella sua area personale. Ogni attestato riceve un <strong>numero progressivo</strong> (es. SFV-2026-0001) verificabile dalla pagina pubblica di verifica. Il PDF viene generato nel browser e non richiede servizi esterni.</p>
             </div>
             <div class="reg-field">
               <label class="reg-label">Nome del firmatario</label>
@@ -1372,10 +1387,12 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
               <label class="reg-label">Titolo / Qualifica</label>
               <input class="reg-input" id="cert-instructor-title" placeholder="es. Direttore Didattico">
             </div>
-            <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
+            <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-primary" onclick="saveCertificateConfig()"><i class="ti ti-device-floppy"></i> Salva</button>
               <button class="btn" onclick="downloadCertificate('Mario Rossi','Corso Licenza di Caccia')"><i class="ti ti-eye"></i> Anteprima attestato</button>
+              <button class="btn" onclick="loadIssuedCertificates()"><i class="ti ti-list-details"></i> Attestati emessi</button>
             </div>
+            <div id="issued-certs-list" style="margin-top:16px"></div>
           </div>
         </div>
 
@@ -1559,6 +1576,10 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
         </div>
         <!-- Pannello chat privata -->
         <div id="s-chat-panel-private">
+          <div class="chat-notice">
+            <i class="ti ti-clock-hour-4"></i>
+            <div>La segreteria legge i messaggi <strong>una volta al giorno</strong>: la risposta potrebbe non essere immediata. Per urgenze chiama il <a href="tel:+393331697875">333 169 7875</a>.</div>
+          </div>
           <div class="chat-box">
             <div class="chat-messages" id="student-chat-messages">
               <div class="chat-empty">
@@ -2838,34 +2859,31 @@ async function doLogin(){
       // Controllo dispositivo (solo studenti attivi)
       if(user.role==='student-active'){
         const devStatus = await _checkDeviceAuth(user.tableId);
-        if(devStatus==='new_device'){
-          await requestDeviceChange(user.tableId,(user.nome||'')+' '+(user.cognome||''));
-          err.innerHTML='<i class="ti ti-device-mobile" style="font-size:16px;flex-shrink:0"></i> Stai accedendo da un nuovo dispositivo. La richiesta è stata inviata all\'amministratore — potrai accedere non appena autorizzato.';
-          err.style.display='flex';
-          if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
-          return;
-        }
-        if(devStatus==='pending'){
-          err.innerHTML='<i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i> Richiesta di accesso da nuovo dispositivo in attesa di approvazione. Contatta la segreteria.';
+        if(devStatus==='new_device' || devStatus==='pending'){
+          // Registra la richiesta (resta come riserva per l'admin)
+          if(devStatus==='new_device'){
+            await requestDeviceChange(user.tableId,(user.nome||'')+' '+(user.cognome||''));
+          }
+          // Se l'email è disponibile, lo studente autorizza il dispositivo da solo via OTP
+          if(_ejsReady && _ejsConfig.templateStudent && user.email){
+            const sent = await _sendLoginOtp(user);
+            if(sent){
+              _showOtpScreen(user);
+              if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
+              return;
+            }
+          }
+          // Fallback (email non configurata): attesa autorizzazione admin
+          err.innerHTML = devStatus==='new_device'
+            ? '<i class="ti ti-device-mobile" style="font-size:16px;flex-shrink:0"></i> Stai accedendo da un nuovo dispositivo. La richiesta è stata inviata all\'amministratore — potrai accedere non appena autorizzato.'
+            : '<i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i> Richiesta di accesso da nuovo dispositivo in attesa di approvazione. Contatta la segreteria.';
           err.style.display='flex';
           if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
           return;
         }
       }
 
-      currentUser=user;
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('shell').style.display='flex';
-      // Carica SOLO i dati di questo studente — non espone altri utenti
-      await loadStudentData(user.tableId);
-      applyRole(user.role);
-      // Sessione unica + device log
-      const di = _getDeviceInfo();
-      logAccess(user.tableId||user.email,'login',`Accesso dalla piattaforma — ${di.platform}`);
-      if(user.role==='student-active'||user.role==='student-pending'){
-        _startSession(user.tableId);
-      }
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
+      await _completeStudentLogin(user);
       return;
     }
   }
@@ -3482,23 +3500,45 @@ function approveCourseRequest(reqId){
   if(!req) return;
   req.status='approved';
 
-  // Aggiungi corsi e specializzazioni all'utente
-  const userRec = USERS.find(u=>u.tableId===req.studentId);
-  if(userRec){
-    userRec.courses = userRec.courses||[];
-    req.courses.forEach(cid=>{ if(!userRec.courses.includes(cid)) userRec.courses.push(cid); });
-    if(req.specs){
-      userRec.specs = userRec.specs||{};
-      Object.entries(req.specs).forEach(([cid,sv])=>{
-        userRec.specs[cid]=userRec.specs[cid]||[];
-        sv.forEach(s=>{ if(!userRec.specs[cid].includes(s)) userRec.specs[cid].push(s); });
-      });
-    }
-    saveToStorage({user:userRec, courseRequests:true});
-    refreshUserTable && refreshUserTable();
+  const sid = req.studentId;
+
+  // 1) Abilita i corsi negli ACCESSI (presets): è questo che dà realmente l'accesso.
+  if(!presets[sid]) presets[sid]={courses:[],specs:{}};
+  presets[sid].courses = presets[sid].courses||[];
+  presets[sid].specs   = presets[sid].specs||{};
+
+  // Scadenza di default: +1 anno da oggi (modificabile poi dalla scheda studente).
+  if(!expiryDates[sid]) expiryDates[sid]={};
+  const _def=new Date(); _def.setFullYear(_def.getFullYear()+1);
+  const defExpStr=_def.toISOString().slice(0,10);
+
+  (req.courses||[]).forEach(cid=>{
+    if(!presets[sid].courses.includes(cid)) presets[sid].courses.push(cid);
+    if(!expiryDates[sid][cid]) expiryDates[sid][cid]=defExpStr;
+  });
+  if(req.specs){
+    Object.entries(req.specs).forEach(([cid,sv])=>{
+      presets[sid].specs[cid]=presets[sid].specs[cid]||[];
+      (sv||[]).forEach(s=>{ if(!presets[sid].specs[cid].includes(s)) presets[sid].specs[cid].push(s); });
+    });
   }
 
-  showToast('Corsi aggiunti a '+req.studentName,'success');
+  // 2) Sincronizza anche l'oggetto utente, per coerenza con la scheda.
+  const userRec = USERS.find(u=>u.tableId===sid);
+  if(userRec){
+    userRec.courses = [...presets[sid].courses];
+    userRec.specs   = JSON.parse(JSON.stringify(presets[sid].specs));
+  }
+
+  // 3) Persisti accessi (presets+scadenze) e richieste (e l'utente aggiornato).
+  saveToStorage({accessi: sid, user: userRec||undefined, courseRequests:true});
+
+  // 4) Aggiorna le viste admin.
+  if(typeof filterUsersTable==='function') filterUsersTable();
+  else if(typeof refreshUserTable==='function') refreshUserTable();
+  if(typeof refreshExpiryAlerts==='function') refreshExpiryAlerts();
+
+  showToast('Corsi abilitati per '+req.studentName,'success');
   notifyStudentCoursesApproved(req);
   refreshCourseRequestsAdmin();
   updateAdminBadge();
@@ -4370,9 +4410,10 @@ function refreshProgressBar(lessonKey){
   bar.style.width = pct+'%';
   label.textContent = `${done} di ${lessons.length} lezioni completate`;
   // Se appena completato al 100%, aggiorna la griglia per mostrare il banner attestato
-  if(pct===100){
-    // Cerca il wrapper della griglia dentro la card per rigenerare il banner senza rebuilding completo
-    const allDone = lessons.every((_,i)=>doneSet.has(i));
+  // Attestato disponibile all'80% (non serve il 100%); esclusi i corsi senza attestato
+  const _cidPB = (CORSI.find(x=>lessonKey.startsWith(x.id))||{}).id;
+  if(pct>=80 && !['c10'].includes(_cidPB)){
+    const allDone = pct>=80;
     const gridWrap = document.querySelector(`[data-lesson-key="${lessonKey}"]`);
     if(allDone && gridWrap){
       const existing = gridWrap.querySelector('.cert-completion-banner');
@@ -4386,8 +4427,8 @@ function refreshProgressBar(lessonKey){
         banner.innerHTML = `<div style="display:flex;align-items:center;gap:12px">
           <i class="ti ti-rosette-discount-check" style="font-size:26px;color:var(--green-600);flex-shrink:0"></i>
           <div>
-            <div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--green-800)">Corso completato al 100%!</div>
-            <div style="font-size:11px;color:var(--green-700);margin-top:2px">Puoi scaricare il tuo attestato di completamento.</div>
+            <div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--green-800)">Corso completato! (${pct}%)</div>
+            <div style="font-size:11px;color:var(--green-700);margin-top:2px">Hai superato l'80% del corso: puoi scaricare il tuo attestato.</div>
           </div>
         </div>
         <button class="btn btn-primary" style="background:var(--gold-700);border-color:var(--gold-700)" onclick="downloadCertificate('${studentFullName.replace(/'/g,"\\'")}','${cName.replace(/'/g,"\\'")}')">
@@ -4571,14 +4612,180 @@ async function _registerCertificate(certNum, studentId, studentName, courseName)
   }catch(e){ console.warn('cert register error',e); }
 }
 
-async function downloadCertificate(studentName, courseName, studentId){
+// ADMIN — elenco di TUTTI gli attestati emessi (numero progressivo, studente, corso, data)
+async function loadIssuedCertificates(){
+  const box=document.getElementById('issued-certs-list');
+  if(!box) return;
+  box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:10px">Caricamento…</div>';
+  try{
+    let snap;
+    try{ snap=await db.collection('certificates').orderBy('issuedAt','desc').get(); }
+    catch(e){ snap=await db.collection('certificates').get(); }
+    const rows=[];
+    snap.forEach(d=>rows.push(d.data()));
+    rows.sort((a,b)=>String(b.issuedAtISO||'').localeCompare(String(a.issuedAtISO||'')));
+    if(!rows.length){ box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:10px">Nessun attestato emesso finora.</div>'; return; }
+    box.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 2px 8px">${rows.length} attestat${rows.length===1?'o':'i'} emess${rows.length===1?'o':'i'}</div>`+
+      rows.map(r=>{
+        const dt=r.issuedAtISO?new Date(r.issuedAtISO).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border-light);border-radius:var(--radius-md);margin-bottom:6px;background:var(--surface)">
+          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--gold-700);flex-shrink:0">${_esc(r.certNum||'')}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.studentName||'')}</div>
+            <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.courseName||'')}</div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0">${dt}</span>
+          <button class="btn btn-xs" style="flex-shrink:0" title="Riscarica" onclick="downloadCertificate(this.dataset.sn,this.dataset.cn,this.dataset.id,this.dataset.num)" data-sn="${_esc(r.studentName||'')}" data-cn="${_esc(r.courseName||'')}" data-id="${_esc(r.studentId||'')}" data-num="${_esc(r.certNum||'')}"><i class="ti ti-download"></i></button>
+        </div>`;
+      }).join('');
+  }catch(e){ box.innerHTML='<div style="font-size:12px;color:var(--red-700);padding:10px">Errore nel caricamento degli attestati.</div>'; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODELLI ATTESTATO PER CORSO
+   c08 Selezione, c07 Biometria, c04 Controllo cinghiale → modello
+   specifico (titolo, riferimenti di legge, doppia firma, programma).
+   Tutti gli altri corsi → modello semplice (stesso schema: loghi,
+   ore frequentate, firma del responsabile).
+═══════════════════════════════════════════════════════════════ */
+const CERT_MODELS = {
+  c08:{
+    title:'Cacciatore esperto nel prelievo selettivo degli ungulati',
+    frequentato:'Ha frequentato regolarmente il corso di formazione',
+    oreText:'72 ore complessive (teorico + pratico)',
+    
+    spec:true,
+    legal:'I corsi faunistici per il conseguimento del titolo «Cacciatore esperto nel prelievo selettivo degli Ungulati» sono stati articolati in conformità alle linee guida ISPRA per la gestione degli ungulati (n. 91 del 2013, art. 7 c. 1 «Programmi didattici per l\u2019abilitazione alla caccia selettiva degli Ungulati e per le successive specializzazioni») e alla delibera di Giunta Regionale del Veneto n. 18 dell\u201911/01/2022.',
+    program:[
+      {h:'Parte generale',items:[
+        'Generalità sugli ungulati: sistematica, morfologia, criteri di discriminazione, eco-etologia',
+        'Distribuzione e status delle specie italiane; concetti di ecologia applicata',
+        'Struttura e dinamica di popolazione; fattori limitanti; incremento utile annuo',
+        'Capacità portante dell\u2019ambiente; densità biotica e agro-forestale',
+        'Metodi per la stima quantitativa delle popolazioni (diretti e indiretti); criteri di campionamento',
+        'Gestione faunistica ambientale; interventi di miglioramento; reintroduzioni e immissioni',
+        'Quadro normativo: leggi nazionali e regionali, regolamenti provinciali, piano faunistico-venatorio']},
+      {h:'Parte speciale (8 ore per ciascun ungulato)',items:[
+        'Ecologia, etologia e biologia; comportamento sociale e ciclo biologico annuale',
+        'Biologia riproduttiva e dinamica di popolazione; habitat, alimentazione, competitori e predatori',
+        'Criteri di riconoscimento in natura: classi di età e di sesso, tracce e segni di presenza',
+        'Monitoraggio e pianificazione del prelievo; ispezione dei capi abbattuti',
+        'Stima dell\u2019età, valutazione del trofeo, rilievi biometrici; specifico per cervo e cinghiale']},
+      {h:'Il prelievo',items:[
+        'Periodi di caccia, comportamento ed etica venatoria',
+        'Tecniche di prelievo (aspetto e cerca, altane, appostamenti); ottiche, armi e munizioni, sicurezza',
+        'Balistica e valutazione degli effetti del tiro; recupero dei capi feriti con cani da traccia',
+        'Trattamento dei capi abbattuti e compilazione delle schede di abbattimento']},
+      {h:'Esercitazioni pratiche',items:[
+        'Riconoscimento in natura; simulazioni di censimento con compilazione delle schede',
+        'Trattamento della spoglia e delle carni (minimo 4 ore)',
+        'Maneggio e tiro con arma a canna rigata o arco (minimo 4 ore) e sessione presso TSN']},
+      {h:'Docente abilitato ISPRA',items:['Rudy Collodet']}
+    ]
+  },
+  c07:{
+    title:'Rilevatore biometrico degli ungulati',
+    frequentato:'Ha frequentato regolarmente il corso di formazione e superato il test finale.',
+    oreText:'6 ore di lezioni frontali + 3 ore pratico',
+    
+    legal:'Il corso per il conseguimento del titolo «Rilevatore biometrico degli ungulati» è stato articolato in conformità alle linee guida ISPRA per la gestione degli ungulati (n. 91 del 2013, art. 7 c. 1, tab. 7.4) e alla delibera di Giunta Regionale del Veneto n. 663 del 30/05/2023.',
+    program:[
+      {h:'Programma — Rilevatore biometrico (linee guida ISPRA 91/2013)',items:[
+        'Importanza del rilevamento biometrico nella gestione faunistica',
+        'Concetti di base di biometria e statistica: campionamento, distribuzione delle frequenze, tendenza centrale e dispersione, correlazione e regressione',
+        'Rilevamento biometrico e standardizzazione delle procedure',
+        'Strumenti e procedure per pesi e misure lineari su corpo, cranio e appendici craniche',
+        'Caratterizzazione biometrica degli ungulati italiani per classi di sesso ed età',
+        'Tecniche di preparazione di crani e mandibole; cenni di trofeistica',
+        'Valutazione dell\u2019età del capo abbattuto e ricadute gestionali; classi di età nel piano di prelievo',
+        'Stima della classe di età dalla dentatura (eruzione, sostituzione, usura della tavola dentaria)',
+        'Altri monitoraggi: indagini sanitarie, genetiche, stato nutrizionale e rendimento riproduttivo',
+        'Tecniche di prelievo e conservazione dei campioni biologici; rischi sanitari nella manipolazione delle carcasse',
+        'Documentazione fotografica; compilazione corretta della scheda',
+        'Utilizzo degli strumenti di misura e prove pratiche di misurazione']},
+      {h:'Verifica finale',items:['Test a quiz con risposte multiple: superamento con l\u201980% di risposte esatte']},
+      {h:'Riferimenti normativi',items:['L.S. 157/1992 — L.R. 50/1993 — D.G.R. Veneto n. 663 del 30/05/2023 — Direttive ISPRA 91/2013']},
+      {h:'Docente abilitato ISPRA',items:['Rudy Collodet']}
+    ]
+  },
+  c04:{
+    title:'Coadiutore per interventi di controllo della specie cinghiale',
+    subtitle:'(ex art. 19 c. 2 L.S. 157/1992 e ex art. 17 c. 2 L.R. 50/1993)',
+    frequentato:'Ha frequentato regolarmente il corso di formazione',
+    oreText:'10 ore di lezioni frontali + esercitazione pratica',
+    
+    legal:'Il corso per il conseguimento del titolo «Coadiutore per interventi di controllo della specie cinghiale» è stato articolato in conformità alle linee guida ISPRA per la gestione degli ungulati (n. 91 del 2013, art. 7 c. 1, tab. 7.4) e alla delibera di Giunta Regionale del Veneto n. 15 del 14/01/2022.',
+    program:[
+      {h:'Aspetti normativi',items:[
+        'L.S. 157/1992 — L.R. 50/1993 — L.S. 394/91',
+        'Principali differenze fra caccia e controllo; la figura del coadiuvante; P.R.I.U.; obblighi comunitari']},
+      {h:'Sorveglianza sanitaria',items:[
+        'Coadiutore come Operatore del Settore Alimentare (OSA)',
+        'Commercializzazione delle carni di selvaggina; centro lavorazione carni',
+        'Valutazione ante e post mortem; prassi sanitaria']},
+      {h:'Il piano di gestione',items:[
+        'Status e gestione della specie cinghiale; obiettivi del controllo; contenuti del piano',
+        'Iter autorizzativo; modalità operative; ruoli, responsabilità e obblighi del coadiuvante',
+        'Organizzazione degli abbattimenti; ripartizione territoriale del prelievo',
+        'Tecniche permesse durante il controllo (chiusino, altana, girata)']},
+      {h:'Ecologia della specie',items:[
+        'Comportamento sociale; ciclo biologico annuale; biologia riproduttiva e dinamica di popolazione',
+        'Habitat, alimentazione, competitori e predatori; impatti su bosco e attività agricole']},
+      {h:'Sezione pratica',items:[
+        'Sessione di tiro presso poligono con direttore TSN (area vitale di 15 cm, almeno 4 tiri a 100 m)']},
+      {h:'Docente abilitato ISPRA',items:['Rudy Collodet']}
+    ]
+  }
+};
+
+// Pagina "Programma del corso" per i modelli specifici
+function _certProgramPage(doc, model, W, H, M, CW, certNum){
+  const bg=()=>{ doc.addPage(); doc.setFillColor(252,250,245); doc.rect(0,0,W,H,'F'); doc.setDrawColor(169,118,47); doc.setLineWidth(0.8); doc.rect(9,9,W-18,H-18); };
+  bg();
+  let y=20;
+  doc.setFont('times','bold'); doc.setFontSize(14); doc.setTextColor(10,20,5);
+  doc.text('Programma del corso', W/2, y, {align:'center'}); y+=6;
+  doc.setFont('times','italic'); doc.setFontSize(10); doc.setTextColor(60,65,50);
+  const t=doc.splitTextToSize(model.title,CW); doc.text(t,W/2,y,{align:'center'}); y+=t.length*5+2;
+  doc.setDrawColor(169,118,47); doc.setLineWidth(0.4); doc.line(M,y,W-M,y); y+=7;
+  (model.program||[]).forEach(sec=>{
+    if(y>H-26){ bg(); y=20; }
+    if(sec.h){ doc.setFont('times','bold'); doc.setFontSize(10.5); doc.setTextColor(45,80,20); const hl=doc.splitTextToSize(sec.h,CW); doc.text(hl,M,y); y+=hl.length*5+1; }
+    (sec.items||[]).forEach(it=>{
+      doc.setFont('times','normal'); doc.setFontSize(9); doc.setTextColor(45,50,40);
+      const lines=doc.splitTextToSize('\u2022  '+it, CW-4);
+      if(y+lines.length*4>H-18){ bg(); y=20; }
+      doc.text(lines, M+2, y); y+=lines.length*4+1;
+    });
+    y+=2;
+  });
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(160,155,140);
+  doc.text(`N° ${certNum}  \u2014  Scuola Faunistica Venatoria`, M, H-12);
+}
+
+// Simbolo di firma — svolazzo stilizzato disegnato a vettori
+function _drawSignature(doc,x,y,s){
+  s=s||1;
+  doc.setDrawColor(35,45,75); doc.setLineWidth(0.8);
+  doc.lines([
+    [3,-9, 9,-11, 12,-2],
+    [1.5,5, -4,6, -1,9],
+    [4,-2, 10,-12, 16,-5],
+    [3,7, -2,7, 3,8],
+    [8,-3, 14,3, 19,-5],
+    [-6,4],
+    [9,-2, 16,-6, 22,2]
+  ], x, y, [s,s], 'S');
+}
+
+async function downloadCertificate(studentName, courseName, studentId, existingCertNum){
   try{
     if(!window.jspdf||!window.jspdf.jsPDF){
       showToast('Libreria PDF non disponibile. Riprova.','error'); return;
     }
-    const certNum = await _getNextCertNumber();
     const sid = studentId || currentUser?.tableId || 'unknown';
-    await _registerCertificate(certNum, sid, studentName, courseName);
+    const certNum = existingCertNum || await _getNextCertNumber();
+    if(!existingCertNum) await _registerCertificate(certNum, sid, studentName, courseName);
 
     // Dati completi dello studente
     const u = USERS.find(x=>x.tableId===sid) || currentUser || {};
@@ -4600,144 +4807,125 @@ async function downloadCertificate(studentName, courseName, studentId){
       'c06':32,'c07':32,'c08':84,'c09':84,'c10':9
     };
     const cid = CORSI.find(c=>c.name===courseName)?.id||'';
+    if(['c10'].includes(cid)){ showToast('Questo corso non prevede il rilascio di un attestato.','info'); return; }
     const ore = courseOre[cid]||0;
 
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF({unit:'mm', format:'a4'}); // portrait A4
-    const W=210, H=297, M=16; // margini 16mm
-    const CW = W - M*2;       // larghezza contenuto
+    const W=210, H=297, M=18;
+    const CW = W - M*2;
 
     // ── Sfondo pergamena ──────────────────────────────
     doc.setFillColor(252,250,245); doc.rect(0,0,W,H,'F');
 
-    // ── Bordo oro doppio ──────────────────────────────
-    doc.setDrawColor(169,118,47); doc.setLineWidth(1.2);
-    doc.rect(6,6,W-12,H-12);
-    doc.setLineWidth(0.3); doc.setDrawColor(210,200,170);
-    doc.rect(9,9,W-18,H-18);
+    // ── Cornice oro doppia ────────────────────────────
+    doc.setDrawColor(169,118,47); doc.setLineWidth(1.4);
+    doc.rect(8,8,W-16,H-16);
+    doc.setLineWidth(0.4); doc.setDrawColor(205,175,120);
+    doc.rect(11,11,W-22,H-22);
 
-    // ── Logo SFV (base64 dalla variabile globale) ─────
-    // Usiamo l'immagine camoscio già in memoria come fallback visivo
-    // Il logo vero viene caricato dinamicamente
-    let logoLoaded = false;
+    // ── Logo SFV (centrato, con margine) ──────────────
+    let logoBottom;
     try{
-      const logoUrl = '/mnt/user-data/uploads/SFV.png';
-      // Tentiamo fetch del logo come data URL
-      const logoB64 = await new Promise((res,rej)=>{
+      const logoB64 = await new Promise((res)=>{
         const img = new window.Image();
         img.crossOrigin='anonymous';
-        img.onload=()=>{
-          const c=document.createElement('canvas');
-          c.width=img.width; c.height=img.height;
-          c.getContext('2d').drawImage(img,0,0);
-          res(c.toDataURL('image/png'));
-        };
-        img.onerror=rej;
-        img.src='data:image/svg+xml,' + encodeURIComponent(
-          '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="60"><text x="50%" y="40" font-family="serif" font-size="28" font-weight="bold" fill="#3A2800" text-anchor="middle">SCUOLA FAUNISTICA VENATORIA</text><text x="50%" y="55" font-family="sans-serif" font-size="10" fill="#8A5E22" text-anchor="middle">TRADIZIONE • AMBIENTE • FORMAZIONE</text></svg>'
-        );
-        setTimeout(()=>res(null),500);
+        img.onload=()=>{ const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; c.getContext('2d').drawImage(img,0,0); res(c.toDataURL('image/png')); };
+        img.onerror=()=>res(null);
+        img.src='data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="60"><text x="50%" y="40" font-family="serif" font-size="28" font-weight="bold" fill="#3A2800" text-anchor="middle">SCUOLA FAUNISTICA VENATORIA</text><text x="50%" y="55" font-family="sans-serif" font-size="10" fill="#8A5E22" text-anchor="middle">TRADIZIONE • AMBIENTE • FORMAZIONE</text></svg>');
+        setTimeout(()=>res(null),600);
       });
-      if(logoB64){
-        const logoH = CW * (656/1630);
-        doc.addImage(logoB64,'PNG', M, M, CW, logoH);
-        logoLoaded=true;
-        var logoBottom = M + logoH;
-      }
+      if(logoB64){ const lw=150, lh=lw*(656/1630), lx=(W-lw)/2; doc.addImage(logoB64,'PNG', lx, 20, lw, lh); logoBottom = 20+lh; }
     }catch(e){}
-
-    if(!logoLoaded){
-      // Fallback testo se logo non caricabile
-      doc.setFont('times','bold'); doc.setFontSize(20); doc.setTextColor(42,20,0);
-      doc.text('SCUOLA FAUNISTICA VENATORIA', W/2, M+10, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(138,94,34);
-      doc.text('TRADIZIONE • AMBIENTE • FORMAZIONE', W/2, M+16, {align:'center'});
-      var logoBottom = M + 20;
+    if(logoBottom===undefined){
+      doc.setFont('times','bold'); doc.setFontSize(22); doc.setTextColor(42,20,0);
+      doc.text('SCUOLA FAUNISTICA VENATORIA', W/2, 34, {align:'center'});
+      logoBottom = 42;
     }
 
-    // ── Linea oro sotto logo ──────────────────────────
-    doc.setDrawColor(169,118,47); doc.setLineWidth(0.8);
-    doc.line(M, logoBottom+1, W-M, logoBottom+1);
-
-    let y = logoBottom + 10;
-
-    // ── ATTESTATO ─────────────────────────────────────
-    doc.setFont('times','bolditalic'); doc.setFontSize(38); doc.setTextColor(10,20,5);
+    // ── Grande spazio, poi ATTESTATO ──────────────────
+    let y = logoBottom + 24;
+    doc.setFont('times','bolditalic'); doc.setFontSize(54); doc.setTextColor(28,46,16);
     doc.text('ATTESTATO', W/2, y, {align:'center'});
-    y += 3;
-    doc.setDrawColor(169,118,47); doc.setLineWidth(0.5);
-    doc.line(M, y, W-M, y);
-    y += 7;
+    y += 5;
+    doc.setDrawColor(169,118,47); doc.setLineWidth(0.6);
+    doc.line(W/2-46, y, W/2-9, y); doc.line(W/2+9, y, W/2+46, y);
+    doc.setFillColor(169,118,47);
+    doc.triangle(W/2-4,y, W/2,y-2.4, W/2+4,y,'F'); doc.triangle(W/2-4,y, W/2,y+2.4, W/2+4,y,'F');
+    y += 14;
 
     // ── Dati studente ─────────────────────────────────
-    doc.setFont('times','normal'); doc.setFontSize(10); doc.setTextColor(80,85,70);
-    doc.text('Rilasciato al Sig. / Sig.ra:', W/2, y, {align:'center'});
-    y += 5;
-    doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(10,20,5);
-    doc.text(`${cognome} ${nome}`, W/2, y, {align:'center'});
-    y += 5;
-    doc.setFont('times','normal'); doc.setFontSize(10); doc.setTextColor(60,65,55);
-    if(dataN||luogoN){
-      doc.text(`nato/a il ${dataN} a ${luogoN}${provN?' ('+provN+')':''}`, W/2, y, {align:'center'});
-      y += 5;
-    }
-    if(cf){
-      doc.text(`codice fiscale: ${cf}`, W/2, y, {align:'center'});
-      y += 5;
-    }
-    y += 2;
-    doc.setDrawColor(200,190,160); doc.setLineWidth(0.3);
-    doc.line(M, y, W-M, y);
-    y += 8;
+    doc.setFont('times','italic'); doc.setFontSize(13); doc.setTextColor(95,85,62);
+    doc.text('Si attesta che', W/2, y, {align:'center'}); y += 10;
+    doc.setFont('times','bold'); doc.setFontSize(24); doc.setTextColor(20,30,10);
+    doc.text(`${cognome} ${nome}`, W/2, y, {align:'center'}); y += 8;
+    doc.setFont('times','normal'); doc.setFontSize(12); doc.setTextColor(70,72,60);
+    if(dataN||luogoN){ doc.text(`nato/a il ${dataN} a ${luogoN}${provN?' ('+provN+')':''}`, W/2, y, {align:'center'}); y += 6; }
+    if(cf){ doc.text(`codice fiscale: ${cf}`, W/2, y, {align:'center'}); y += 6; }
+    y += 6;
+
+    // ── Modello del corso (specifico o semplice) ──────
+    const _model = CERT_MODELS[cid] || null;
+    const courseTitle = _model?.title || courseName;
+    const frequentatoText = _model?.frequentato || 'Ha frequentato regolarmente il corso di formazione';
+    const oreText = _model?.oreText || (ore>0 ? `${ore} ore` : '');
+    let specList = [];
+    if(_model?.spec){ specList = (presets[sid]?.specs?.[cid]) || (u.specs?.[cid]) || []; }
 
     // ── Ha frequentato ────────────────────────────────
-    doc.setFont('times','normal'); doc.setFontSize(12); doc.setTextColor(40,50,30);
-    doc.text('Ha frequentato regolarmente il corso di formazione', W/2, y, {align:'center'});
-    y += 8;
+    doc.setFont('times','normal'); doc.setFontSize(14); doc.setTextColor(45,55,35);
+    const freqL = doc.splitTextToSize(frequentatoText, CW-6);
+    doc.text(freqL, W/2, y, {align:'center'});
+    y += freqL.length*7 + 3;
 
-    // ── Nome corso ────────────────────────────────────
-    doc.setFont('times','bold'); doc.setFontSize(17); doc.setTextColor(10,20,5);
-    const courseLines = doc.splitTextToSize(courseName.toUpperCase(), CW);
+    // ── Titolo del corso ──────────────────────────────
+    doc.setFont('times','bold'); doc.setFontSize(_model?20:24); doc.setTextColor(28,46,16);
+    const courseLines = doc.splitTextToSize(courseTitle.toUpperCase(), CW-4);
     doc.text(courseLines, W/2, y, {align:'center'});
-    y += courseLines.length * 8 + 2;
+    y += courseLines.length * (_model?9:11) + 3;
+    if(_model?.subtitle){
+      doc.setFont('times','italic'); doc.setFontSize(11); doc.setTextColor(90,85,65);
+      const subL=doc.splitTextToSize(_model.subtitle,CW-6); doc.text(subL,W/2,y,{align:'center'}); y+=subL.length*5+2;
+    }
+    if(specList.length){
+      doc.setFont('times','bold'); doc.setFontSize(12); doc.setTextColor(45,80,20);
+      const spL=doc.splitTextToSize('Specie: '+specList.join(', '),CW-6); doc.text(spL,W/2,y,{align:'center'}); y+=spL.length*6+1;
+    }
 
-    // ── Ore ───────────────────────────────────────────
-    if(ore>0){
-      doc.setFont('times','bold'); doc.setFontSize(10); doc.setTextColor(45,80,20);
-      doc.text(`Durata corso: ${ore} ore`, W/2, y, {align:'center'});
+    // ── Ore frequentate ───────────────────────────────
+    if(oreText){
+      doc.setFont('times','bold'); doc.setFontSize(13); doc.setTextColor(45,80,20);
+      doc.text(`Durata del corso: ${oreText}`, W/2, y, {align:'center'});
       y += 8;
     }
 
-    // ── Silhouette animali (SVG inline) ───────────────
-    // Usiamo un rettangolo decorativo come segnaposto grafico
-    doc.setDrawColor(180,170,140); doc.setLineWidth(0.3);
-    doc.line(M, y, W-M, y);
-    y += 3;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(160,150,130);
-    doc.text('🦌  🐗  🦙  🦌  🐑', W/2, y+5, {align:'center'});
-    y += 10;
-    doc.line(M, y, W-M, y);
-    y += 10;
+    // ── Riferimenti di legge (solo modelli specifici) ─
+    if(_model?.legal){
+      doc.setFont('times','italic'); doc.setFontSize(9); doc.setTextColor(95,92,78);
+      const legalL=doc.splitTextToSize(_model.legal, CW-8);
+      doc.text(legalL, W/2, y, {align:'center'});
+      y += legalL.length*4 + 3;
+    }
 
-    // ── Footer firme ──────────────────────────────────
-    doc.setFont('times','normal'); doc.setFontSize(10); doc.setTextColor(30,40,20);
-    doc.text('Scuola Faunistica Venatoria', M, y);
-    y += 5;
-    doc.setFont('times','bold'); doc.setFontSize(11);
-    doc.text('Rudy Collodet', M, y);
-    y += 4;
-    doc.setFont('times','italic'); doc.setFontSize(9); doc.setTextColor(80,90,70);
-    doc.text('Titolare', M, y);
-    y += 8;
+    // ── Firma (una sola: il Responsabile) con simbolo ─
+    const sigX = W/2;
+    let sy = Math.max(y + 16, H - 56);
+    _drawSignature(doc, sigX-24, sy, 1.15);
+    doc.setDrawColor(120,110,90); doc.setLineWidth(0.4);
+    doc.line(sigX-40, sy+7, sigX+40, sy+7);
+    doc.setFont('times','bold'); doc.setFontSize(15); doc.setTextColor(20,30,10);
+    doc.text('Rudy Collodet', sigX, sy+14, {align:'center'});
+    doc.setFont('times','italic'); doc.setFontSize(11); doc.setTextColor(80,85,65);
+    doc.text('Il Responsabile — Scuola Faunistica Venatoria', sigX, sy+20, {align:'center'});
 
-    // ── Data ──────────────────────────────────────────
-    doc.setFont('times','normal'); doc.setFontSize(10); doc.setTextColor(40,45,35);
-    doc.text(`Data: ${dateOggi}`, M, y);
-    y += 6;
+    // ── Data e numero attestato ───────────────────────
+    doc.setFont('times','normal'); doc.setFontSize(11); doc.setTextColor(55,58,45);
+    doc.text(`Data: ${dateOggi}`, M, H-19);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,145,130);
+    doc.text(`N° ${certNum}  |  Verifica: nuova-piattaforma-sfv.netlify.app`, M, H-14);
 
-    // ── Numero attestato ──────────────────────────────
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(160,155,140);
-    doc.text(`N° ${certNum}  |  Verifica: nuova-piattaforma-sfv.netlify.app`, M, y);
+    // ── Pagina programma (solo modelli specifici) ─────
+    if(_model?.program){ _certProgramPage(doc, _model, W, H, M, CW, certNum); }
 
     const safeName=(cognome+'_'+nome+'_'+courseName).replace(/[^a-z0-9]+/gi,'_').slice(0,80);
     doc.save(`Attestato_${safeName}_${certNum}.pdf`);
@@ -4952,12 +5140,36 @@ async function notifyStudentCoursesApproved(req){
 // Estrae l'ID numerico Vimeo da un valore tipo "123456" o "123456/hash"
 function _vimeoNumId(url){ return (url||'').split('/')[0]; }
 
+// Quiz Regione Veneto — app pubblica messa in evidenza in cima ai corsi indicati
+const COURSE_QUIZ = {
+  c01:'https://quizcacaccia-veneto-sfv-fidc.netlify.app/',  // Licenza di Caccia (base)
+  c02:'https://quizcacaccia-veneto-sfv-fidc.netlify.app/',  // Zona Alpi
+  c03:'https://quizcacaccia-veneto-sfv-fidc.netlify.app/'   // Zona Alpi Belluno
+};
+function _quizBannerHtml(lessonKey){
+  const cid=(lessonKey||'').split('__')[0];
+  if((lessonKey||'').includes('__') || !COURSE_QUIZ[cid]) return '';
+  const logo=(typeof _SFV_EMBLEM!=='undefined')?_SFV_EMBLEM:'';
+  return `<a class="quiz-highlight" href="${COURSE_QUIZ[cid]}" target="_blank" rel="noopener">
+    ${logo?`<img class="quiz-highlight-logo" src="${logo}" alt="Scuola Faunistica Venatoria">`:''}
+    <div class="quiz-highlight-body">
+      <div class="quiz-highlight-title">Quiz Regione Veneto <span class="quiz-highlight-badge">In evidenza</span></div>
+      <div class="quiz-highlight-sub">Allenati con i quiz ufficiali per l'esame — accesso libero, aprilo quando vuoi</div>
+    </div>
+    <span class="quiz-highlight-cta"><i class="ti ti-external-link"></i> Apri i quiz</span>
+  </a>`;
+}
+
 // Genera la griglia di card (video con thumbnail Vimeo + documenti) per una lista di lezioni
 function lessonCardsHtml(lessons, doneSet, lessonKey, label){
   if(!lessons.length){
-    return '<div class="txt-muted" style="font-size:11px;font-style:italic;padding:5px 0 2px">Nessuna lezione disponibile</div>';
+    return _quizBannerHtml(lessonKey) || '<div class="txt-muted" style="font-size:11px;font-style:italic;padding:5px 0 2px">Nessuna lezione disponibile</div>';
   }
-  const allDone = lessons.length > 0 && lessons.every((_,i) => doneSet.has(i));
+  // Attestato disponibile all'80% di completamento (non serve il 100%)
+  const CERT_THRESHOLD = 80;
+  const NO_CERT_COURSES = ['c10']; // corsi che NON rilasciano attestato (es. Persona Formata Trattamento Carni)
+  const _pctDone = lessons.length ? Math.round(doneSet.size / lessons.length * 100) : 0;
+  const allDone = _pctDone >= CERT_THRESHOLD && !NO_CERT_COURSES.includes((lessonKey||'').split('__')[0]);
   const _studentFullName = currentUser ? (currentUser.nome+' '+currentUser.cognome) : 'Studente';
   const cardsHtml = lessons.map((l,i)=>{
     const done = doneSet.has(i);
@@ -4990,16 +5202,21 @@ function lessonCardsHtml(lessons, doneSet, lessonKey, label){
       <div style="display:flex;align-items:center;gap:12px">
         <i class="ti ti-rosette-discount-check" style="font-size:26px;color:var(--green-600);flex-shrink:0"></i>
         <div>
-          <div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--green-800)">Corso completato al 100%!</div>
-          <div style="font-size:11px;color:var(--green-700);margin-top:2px">Puoi scaricare il tuo attestato di completamento.</div>
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--green-800)">Corso completato! (${_pctDone}%)</div>
+          <div style="font-size:11px;color:var(--green-700);margin-top:2px">Hai superato l'80% del corso: puoi scaricare il tuo attestato.</div>
         </div>
       </div>
       <button class="btn btn-primary" style="background:var(--gold-700);border-color:var(--gold-700);gap:7px" onclick="downloadCertificate(this.dataset.sn, this.dataset.cn)" data-sn="${_studentFullName.replace(/"/g,'&quot;')}" data-cn="${label.replace(/"/g,'&quot;')}">
         <i class="ti ti-certificate"></i> Scarica Attestato PDF
       </button>
-    </div>` : '';
+    </div>`
+    : ((!NO_CERT_COURSES.includes((lessonKey||'').split('__')[0]) && lessons.length) ? `
+    <div class="cert-hint">
+      <i class="ti ti-certificate"></i>
+      <div>Al termine delle videolezioni potrai <strong>scaricare da solo il tuo attestato in PDF</strong>: il pulsante compare qui in automatico quando raggiungi almeno l'<strong>80%</strong> del percorso. Avanzamento attuale: <strong>${_pctDone}%</strong>.</div>
+    </div>` : '');
 
-  return `<div class="lesson-section-title">Videolezioni</div><div class="lesson-grid">${cardsHtml}</div>${completionBanner}`;
+  return `${_quizBannerHtml(lessonKey)}<div class="lesson-section-title">Videolezioni</div><div class="lesson-grid">${cardsHtml}</div>${completionBanner}`;
 }
 
 async function buildStudentHome(){
@@ -5086,7 +5303,7 @@ async function buildStudentHome(){
             :'<div class="txt-secondary" style="font-size:12px">Nessuna lezione ancora disponibile</div>'}
           </div>
         </div>
-        ${tot>0?`<div style="margin-top:16px" data-lesson-key="${cid}">${lessonCardsHtml(ls, doneSet, cid, c.name)}</div>`:''}
+        ${(tot>0 || COURSE_QUIZ[cid])?`<div style="margin-top:16px" data-lesson-key="${cid}">${lessonCardsHtml(ls, doneSet, cid, c.name)}</div>`:''}
       </div>`;
     }
   });
@@ -6048,7 +6265,7 @@ function refreshExpiryAlerts(){
 // credenziali il token è cambiato → disconnessione automatica.
 
 let _sessionToken = null;
-let _sessionCheckTimer = null;
+let _sessionUnsub = null;
 
 function _generateToken(){
   return Array.from(crypto.getRandomValues(new Uint8Array(24)))
@@ -6057,46 +6274,152 @@ function _generateToken(){
 
 async function _startSession(userId){
   _sessionToken = _generateToken();
+  const di = _getDeviceInfo();
   try{
     await db.collection('sessions').doc(userId).set({
       token:   _sessionToken,
-      device:  _getDeviceInfo().device,
-      browser: _getDeviceInfo().browser,
+      device:  di.device,
+      browser: di.browser,
       ts:      firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){ console.warn('session start error',e); }
-  // Controlla ogni 60s se la sessione è ancora valida
-  _sessionCheckTimer = setInterval(()=>_checkSession(userId), 60000);
+
+  // Ascolto in TEMPO REALE: se il token cambia (accesso da altro dispositivo),
+  // questa sessione viene chiusa immediatamente, non dopo 60 secondi.
+  if(_sessionUnsub){ _sessionUnsub(); _sessionUnsub=null; }
+  _sessionUnsub = db.collection('sessions').doc(userId).onSnapshot(snap=>{
+    if(!currentUser || currentUser.tableId!==userId) return;
+    if(!snap.exists) return;
+    const t = snap.data().token;
+    if(t && t !== _sessionToken){ _kickSession(); }
+  }, err=>console.warn('session watch error', err));
 }
 
-async function _checkSession(userId){
-  if(!currentUser||currentUser.tableId!==userId) return;
-  try{
-    const snap = await db.collection('sessions').doc(userId).get();
-    if(!snap.exists) return;
-    if(snap.data().token !== _sessionToken){
-      // Token diverso: qualcun altro ha fatto login
-      clearInterval(_sessionCheckTimer);
-      _sessionToken = null;
-      showToast('La tua sessione è stata aperta su un altro dispositivo. Sei stato disconnesso.','warning');
-      setTimeout(()=>{
-        goLogin();
-        // Mostra banner esplicativo sulla schermata login
-        const warn = document.getElementById('fb-conn-warning');
-        if(warn){
-          warn.querySelector('p').textContent =
-            'Accesso effettuato da un altro dispositivo. Se non sei stato tu, cambia subito la password.';
-          warn.style.display='flex';
-        }
-      }, 2000);
+function _kickSession(){
+  if(_sessionUnsub){ _sessionUnsub(); _sessionUnsub=null; }
+  _sessionToken = null;
+  showToast('La tua sessione è stata aperta su un altro dispositivo. Sei stato disconnesso.','warning');
+  setTimeout(()=>{
+    goLogin();
+    const warn = document.getElementById('fb-conn-warning');
+    if(warn){
+      warn.querySelector('p').textContent =
+        'Accesso effettuato da un altro dispositivo. Se non sei stato tu, cambia subito la password.';
+      warn.style.display='flex';
     }
-  }catch(e){}
+  }, 1500);
 }
 
 async function _endSession(userId){
-  clearInterval(_sessionCheckTimer);
+  if(_sessionUnsub){ _sessionUnsub(); _sessionUnsub=null; }
+  const myToken = _sessionToken;
   _sessionToken = null;
-  try{ await db.collection('sessions').doc(userId).delete(); }catch(e){}
+  // Elimina il documento di sessione SOLO se è ancora il nostro
+  // (evita di cancellare la sessione di chi ci ha appena "scalzato").
+  try{
+    const ref = db.collection('sessions').doc(userId);
+    const snap = await ref.get();
+    if(snap.exists && snap.data().token === myToken){ await ref.delete(); }
+  }catch(e){}
+}
+
+// ── COMPLETAMENTO LOGIN STUDENTE (riusato dopo verifica OTP) ──
+async function _completeStudentLogin(user){
+  currentUser=user;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('shell').style.display='flex';
+  await loadStudentData(user.tableId);
+  applyRole(user.role);
+  const di=_getDeviceInfo();
+  logAccess(user.tableId||user.email,'login',`Accesso dalla piattaforma — ${di.platform}`);
+  if(user.role==='student-active'||user.role==='student-pending'){ _startSession(user.tableId); }
+}
+
+/* ── OTP EMAIL PER NUOVO DISPOSITIVO ──────────────────────────
+   Consiglio Firestore rules: limitare la lettura di 'loginOtp'
+   al solo proprietario, così il codice non è leggibile da altri. */
+let _otpUser=null;
+function _maskEmail(e){ if(!e) return ''; const p=String(e).split('@'); if(p.length<2) return e; return p[0].slice(0,2)+'***@'+p[1]; }
+
+async function _sendLoginOtp(user){
+  try{
+    const code=String(Math.floor(100000+Math.random()*900000));
+    await db.collection('loginOtp').doc(user.tableId).set({
+      code, fp:_getDeviceFingerprint(), expiresAt:Date.now()+600000, attempts:0,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await emailjs.send(_ejsConfig.service, _ejsConfig.templateStudent, {
+      to_email: user.email,
+      to_name: ((user.nome||'')+' '+(user.cognome||'')).trim(),
+      subject: 'Codice di accesso — Scuola Faunistica Venatoria',
+      message: `Il tuo codice di accesso è: ${code}\n\nInseriscilo nella piattaforma per autorizzare l'accesso da questo nuovo dispositivo. Il codice è valido 10 minuti.\n\nSe non stai provando ad accedere, ignora questa email e cambia subito la password.`,
+      student_name: ((user.nome||'')+' '+(user.cognome||'')).trim(),
+      student_email: user.email
+    });
+    return true;
+  }catch(e){ console.warn('OTP send error',e); return false; }
+}
+
+function _showOtpScreen(user){
+  _otpUser=user;
+  let ov=document.getElementById('otp-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='otp-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(14,26,9,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 16px 44px rgba(0,0,0,.3)">
+      <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#234A14,#16290D);display:flex;align-items:center;justify-content:center;margin-bottom:16px"><i class="ti ti-mail-check" style="color:#fff;font-size:24px"></i></div>
+      <h2 style="font-size:19px;margin:0 0 6px;color:#16290D;font-family:var(--font-display,serif)">Verifica nuovo dispositivo</h2>
+      <p style="font-size:13px;color:#5C6450;line-height:1.55;margin:0 0 16px">Abbiamo inviato un codice a <strong id="otp-email"></strong>. Inseriscilo per autorizzare l'accesso da questo dispositivo.</p>
+      <input id="otp-input" inputmode="numeric" maxlength="6" placeholder="––––––" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')_verifyLoginOtp()" style="width:100%;text-align:center;letter-spacing:8px;font-size:24px;font-weight:700;padding:12px;border:1.5px solid #DDD9C9;border-radius:12px;outline:none;margin-bottom:6px;box-sizing:border-box">
+      <div id="otp-msg" style="font-size:12px;min-height:16px;margin-bottom:10px"></div>
+      <button onclick="_verifyLoginOtp()" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#234A14,#33651C);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Verifica e accedi</button>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px">
+        <a href="#" onclick="_resendLoginOtp();return false" style="color:#234A14;font-weight:600;text-decoration:none">Invia di nuovo il codice</a>
+        <a href="#" onclick="_closeOtp();return false" style="color:#8C9180;text-decoration:none">Annulla</a>
+      </div>
+      <p style="font-size:11px;color:#8C9180;margin:14px 0 0;line-height:1.5">Non ricevi l'email? Puoi attendere l'autorizzazione dell'amministratore o contattare la segreteria.</p>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+  document.getElementById('otp-email').textContent=_maskEmail(user.email);
+  document.getElementById('otp-msg').textContent='';
+  ov.style.display='flex';
+  const inp=document.getElementById('otp-input'); if(inp){ inp.value=''; setTimeout(()=>inp.focus(),120); }
+}
+
+function _closeOtp(){ const ov=document.getElementById('otp-overlay'); if(ov) ov.style.display='none'; _otpUser=null; }
+
+async function _resendLoginOtp(){
+  if(!_otpUser) return;
+  const ok=await _sendLoginOtp(_otpUser);
+  const m=document.getElementById('otp-msg');
+  if(m){ m.style.color=ok?'#2F6A1E':'#A32D2D'; m.textContent=ok?'Nuovo codice inviato.':'Errore nell\'invio. Riprova.'; }
+}
+
+async function _verifyLoginOtp(){
+  if(!_otpUser) return;
+  const inp=document.getElementById('otp-input'); const m=document.getElementById('otp-msg');
+  const code=(inp?.value||'').trim();
+  const setMsg=(t)=>{ if(m){ m.style.color='#A32D2D'; m.textContent=t; } };
+  if(code.length!==6){ setMsg('Inserisci il codice a 6 cifre.'); return; }
+  try{
+    const ref=db.collection('loginOtp').doc(_otpUser.tableId);
+    const snap=await ref.get();
+    if(!snap.exists){ setMsg('Codice non valido o scaduto. Richiedine uno nuovo.'); return; }
+    const d=snap.data();
+    if(Date.now()>d.expiresAt){ await ref.delete().catch(()=>{}); setMsg('Codice scaduto. Richiedine uno nuovo.'); return; }
+    if((d.attempts||0)>=5){ await ref.delete().catch(()=>{}); setMsg('Troppi tentativi. Richiedi un nuovo codice.'); return; }
+    if(String(d.code)!==code){ await ref.update({attempts:(d.attempts||0)+1}).catch(()=>{}); setMsg('Codice errato. Riprova.'); return; }
+    // Corretto → autorizza questo dispositivo e completa l'accesso
+    await db.collection('device_auth').doc(_otpUser.tableId).set({
+      fingerprint:_getDeviceFingerprint(), device:_getDeviceInfo().platform,
+      approved:true, pendingFingerprint:null, pendingDevice:null,
+      registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    await ref.delete().catch(()=>{});
+    const u=_otpUser; _closeOtp();
+    await _completeStudentLogin(u);
+  }catch(e){ setMsg('Errore. Riprova.'); }
 }
 
 // ── 2. DEVICE INFO per log accessi ───────────────────────────
@@ -8835,8 +9158,9 @@ async function faSubmit(){
    LINK INVERSO → DATABASE
    Genera un token e apre il Database con lo studente evidenziato
 ═══════════════════════════════════════════════════════════════ */
-const DATABASE_URL = 'https://nuova-piattaforma-corsi-scuola-faunistica-venatoria-1lerOpyk.vercel.app/database.html';
-// ↑ Imposta il percorso corretto del file database
+// ⚙️ INDIRIZZO DEL DATABASE (sito Netlify). La piattaforma vi aggiunge ?dbtok=…
+//    Se un domani cambia il dominio, correggi solo questa riga.
+const DATABASE_URL = 'https://database-scuola-faunistica-venatoria.netlify.app/';
 
 async function apriStudenteNelDatabase(){
   // Solo admin può aprire il database
