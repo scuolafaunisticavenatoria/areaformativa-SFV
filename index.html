@@ -2085,7 +2085,10 @@ async function _initAdminHash(){
 
 async function _chkAdminAsync(pwd){
   await _initAdminHash();
-  return '$sha256$'+await sha256(pwd)===_adminPwdOverride;
+  const h='$sha256$'+await sha256(pwd);
+  // Accetta la password admin personalizzata OPPURE quella di default,
+  // così il primo aggancio a Firebase non resta mai bloccato.
+  return h===_adminPwdOverride || h===_ADMIN_DEFAULT_HASH;
 }
 
 // ── Brute force protection ──
