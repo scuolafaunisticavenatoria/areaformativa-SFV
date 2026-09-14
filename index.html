@@ -17,6 +17,7 @@
 <!-- Firebase compat SDK (non richiede bundler) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -733,6 +734,11 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
     <button class="login-btn login-btn-admin" id="li-btn" onclick="doLogin()">
       <i class="ti ti-login" style="font-size:16px"></i> Accedi
     </button>
+
+    <div style="display:flex;align-items:flex-start;gap:7px;margin-top:12px;padding:9px 12px;border-radius:var(--radius-md);background:var(--green-50);border:1px solid var(--green-200);font-size:11.5px;line-height:1.5;color:var(--green-800)">
+      <i class="ti ti-info-circle" style="font-size:14px;color:var(--green-600);flex-shrink:0;margin-top:1px"></i>
+      <span>L'accesso è riservato agli iscritti <strong>attivati dalla segreteria</strong>. Per iscriverti o farti abilitare, contatta la scuola.</span>
+    </div>
 
     <div style="text-align:right;margin-top:4px;margin-bottom:2px">
       <a href="#" onclick="openResetPwd();return false" style="color:var(--text-muted);font-size:11px;text-decoration:none;">Password dimenticata?</a>
@@ -2205,6 +2211,9 @@ async function _fsDel(col, docId){
 }
 
 /* ── saveToStorage ── */
+// Chiave email normalizzata per l'indice inviti (niente caratteri vietati negli ID)
+function _emailKey(email){ return String(email||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_'); }
+
 async function saveUserToStorage(u){
   await _fsSet('users', u.tableId, {
     email: u.email, password: u.password,
@@ -2216,6 +2225,13 @@ async function saveUserToStorage(u){
     role: u.role, tableId: u.tableId,
     createdAt: u.createdAt||''
   });
+  // Indice "inviti": solo email→tableId+ruolo (nessun dato sensibile), leggibile
+  // prima del login per consentire il primo accesso SOLO a chi l'admin ha creato.
+  try{
+    if(u.email){
+      await _fsSet('invites', _emailKey(u.email), { tableId: u.tableId, role: u.role||'' });
+    }
+  }catch(e){ console.warn('invite index error', e); }
 }
 
 async function saveAccessiToStorage(uid){
@@ -2762,28 +2778,10 @@ async function doLogin(){
     err.innerHTML='<i class="ti ti-alert-circle"></i> Inserisci la tua email.';
     err.style.display='flex';return;
   }
-  // Se password vuota, potrebbe essere primo accesso - verifica prima
+  // Primo accesso e login richiedono sempre una password digitata:
+  // se manca, la si chiede (nessuna lettura dati prima dell'autenticazione).
   if(!pwd){
-    let userCheck=USERS.find(u=>u.email.toLowerCase()===email);
-    // Se USERS è vuoto (boot senza admin), cerca su Firestore
-    if(!userCheck){
-      try{
-        console.log('[SFV] Cerco su Firestore:', email);
-        const snap=await db.collection('users').where('email','==',email).limit(1).get();
-        console.log('[SFV] Firestore risultati:', snap.size, snap.empty);
-        if(!snap.empty){
-          userCheck=snap.docs[0].data();
-          if(!userCheck.tableId) userCheck.tableId=snap.docs[0].id;
-          console.log('[SFV] Utente trovato:', userCheck.email, 'firstAccess:', userCheck.firstAccess, 'password:', !!userCheck.password);
-        }
-      }catch(e){ console.warn('[SFV] Firestore lookup failed:',e); }
-    }
-    if(userCheck && (!userCheck.password || userCheck.firstAccess===true)){
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
-      faShowOverlay(userCheck); return;
-    }
-    console.log('[SFV] userCheck:', userCheck);
-    err.innerHTML='<i class="ti ti-alert-circle"></i> Inserisci email e password.';
+    err.innerHTML='<i class="ti ti-alert-circle"></i> Inserisci la tua password. Se è il primo accesso, digita la password che vuoi usare.';
     err.style.display='flex';return;
   }
 
@@ -2797,14 +2795,32 @@ async function doLogin(){
 
   const isAdmin=(email==='admin'||email==='admin@sfv.it');
   if(isAdmin){
-    const ok=await _chkAdminAsync(pwd);
-    if(ok){
+    const adminEmail='admin@sfv.it';
+    let cred=null, ok=false;
+    try{
+      cred = await firebase.auth().signInWithEmailAndPassword(adminEmail, pwd);
+      ok = true;
+    }catch(e){
+      const c = e && e.code;
+      if(c==='auth/user-not-found' || c==='auth/invalid-login-credentials' || c==='auth/invalid-credential'){
+        // Primo setup: verifica la password admin "legacy", poi crea l'account Auth
+        if(await _chkAdminAsync(pwd)){
+          try{ cred = await firebase.auth().createUserWithEmailAndPassword(adminEmail, pwd); ok = true; }
+          catch(e2){ err.innerHTML='<i class="ti ti-alert-circle"></i> Impossibile creare l\'account admin ('+(e2.code||'')+').'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return; }
+        }
+      } else if(c==='auth/operation-not-allowed'){
+        err.innerHTML='<i class="ti ti-alert-circle"></i> Su Firebase non è abilitato l\'accesso Email/Password. Attivalo in Authentication → Sign-in method.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+      } else if(c==='auth/too-many-requests'){
+        err.innerHTML='<i class="ti ti-lock"></i> Troppi tentativi. Riprova più tardi.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+      }
+    }
+    if(ok && cred){
       err.style.display='none';
       _loginAttempts[email]={count:0,lockedUntil:0};
-      currentUser={email:'admin@sfv.it',nome:'Admin',cognome:'',role:'admin'};
+      try{ await db.collection('admins').doc(cred.user.uid).set({email:adminEmail, ts:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); }catch(_){}
+      currentUser={email:adminEmail,nome:'Admin',cognome:'',role:'admin'};
       document.getElementById('login-screen').style.display='none';
       document.getElementById('shell').style.display='flex';
-      // Carica tutti i dati SOLO dopo login admin confermato
       try{
         await loadFromStorage();
         migratePasswords();
@@ -2815,10 +2831,11 @@ async function doLogin(){
         refreshDashboardAdmin();
         loadEmailJSConfig().then(()=>checkExpiryReminders());
         loadCertificateConfig();
+        _backfillInvites(); // assicura un "invito" per ogni studente già esistente
         setTimeout(()=>checkAndRunAutoBackup(), 3000);
       }catch(e){ console.error('Admin data load error:',e); }
       applyRole('admin');
-      setTimeout(()=>_purgeExpiredTokens(), 2000); // pulizia token in background
+      setTimeout(()=>_purgeExpiredTokens(), 2000);
       if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
       return;
     }
@@ -2832,72 +2849,46 @@ async function doLogin(){
     return;
   }
 
-  let user=USERS.find(u=>u.email.toLowerCase()===email);
-  // Se USERS è vuoto (studente al primo login), cerca su Firestore
-  if(!user){
-    try{
-      const snap=await db.collection('users').where('email','==',email).limit(1).get();
-      if(!snap.empty){
-        user=snap.docs[0].data();
-        if(!user.tableId) user.tableId=snap.docs[0].id;
-      }
-    }catch(e){ console.warn('Firestore user lookup failed:',e); }
-  }
-  if(user){
-    // ─── Primo accesso: nessuna password impostata ───
-    if(!user.password || user.firstAccess===true){
-      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
-      err.style.display='none';
-      faShowOverlay(user);
-      return;
-    }
-    const ok=await checkPassword(pwd,user.password);
-    if(ok){
-      err.style.display='none';
-      _loginAttempts[email]={count:0,lockedUntil:0};
-
-      // Controllo dispositivo (solo studenti attivi)
-      if(user.role==='student-active'){
-        const devStatus = await _checkDeviceAuth(user.tableId);
-        if(devStatus==='new_device' || devStatus==='pending'){
-          // Registra la richiesta (resta come riserva per l'admin)
-          if(devStatus==='new_device'){
-            await requestDeviceChange(user.tableId,(user.nome||'')+' '+(user.cognome||''));
-          }
-          // Se l'email è disponibile, lo studente autorizza il dispositivo da solo via OTP
-          if(_ejsReady && _ejsConfig.templateStudent && user.email){
-            const sent = await _sendLoginOtp(user);
-            if(sent){
-              _showOtpScreen(user);
-              if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
-              return;
-            }
-          }
-          // Fallback (email non configurata): attesa autorizzazione admin
-          err.innerHTML = devStatus==='new_device'
-            ? '<i class="ti ti-device-mobile" style="font-size:16px;flex-shrink:0"></i> Stai accedendo da un nuovo dispositivo. La richiesta è stata inviata all\'amministratore — potrai accedere non appena autorizzato.'
-            : '<i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i> Richiesta di accesso da nuovo dispositivo in attesa di approvazione. Contatta la segreteria.';
-          err.style.display='flex';
-          if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';}
-          return;
+  // ─────────── LOGIN STUDENTE via Firebase Authentication ───────────
+  try{
+    const cred = await firebase.auth().signInWithEmailAndPassword(email, pwd);
+    _loginAttempts[email]={count:0,lockedUntil:0};
+    err.style.display='none';
+    await _afterAuthStudent(cred.user.uid, btn, err);
+    return;
+  }catch(e){
+    const c = e && e.code;
+    if(c==='auth/user-not-found' || c==='auth/invalid-login-credentials' || c==='auth/invalid-credential'){
+      // Nessun account Auth: primo accesso consentito SOLO se esiste l'invito dell'admin
+      let inv=null;
+      try{ const s=await db.collection('invites').doc(_emailKey(email)).get(); if(s.exists) inv=s.data(); }catch(_){}
+      if(inv && inv.tableId){
+        if(inv.role && inv.role!=='student-active'){
+          err.innerHTML = inv.role==='student-pending'
+            ? '<i class="ti ti-clock"></i> Il tuo account è in attesa di attivazione da parte della segreteria.'
+            : '<i class="ti ti-lock"></i> Accesso non abilitato. Contatta la segreteria.';
+          err.style.display='flex'; return;
         }
+        err.style.display='none';
+        faShowOverlay({ email:email, tableId:inv.tableId, role:inv.role||'student-active', firstAccessViaInvite:true });
+        return;
       }
-
-      await _completeStudentLogin(user);
-      return;
+      _recordFailedLogin(email);
+      err.innerHTML='<i class="ti ti-alert-circle"></i> Email o password non corretti.'; err.style.display='flex'; return;
     }
+    if(c==='auth/wrong-password'){
+      _recordFailedLogin(email);
+      const left=_attemptsLeft(email);
+      err.innerHTML = _isLockedOut(email)
+        ? `<i class="ti ti-lock"></i> Troppi tentativi falliti. Account bloccato per ${_lockoutMinutesLeft(email)} minuti.`
+        : (left>0 ? `<i class="ti ti-alert-circle"></i> Email o password non corretti. Ancora ${left} tentativ${left===1?'o':'i'}.` : '<i class="ti ti-alert-circle"></i> Email o password non corretti.');
+      err.style.display='flex'; return;
+    }
+    if(c==='auth/too-many-requests'){ err.innerHTML='<i class="ti ti-lock"></i> Troppi tentativi. Riprova più tardi.'; err.style.display='flex'; return; }
+    if(c==='auth/operation-not-allowed'){ err.innerHTML='<i class="ti ti-alert-circle"></i> Accesso Email/Password non abilitato su Firebase. Contatta l\'amministratore.'; err.style.display='flex'; return; }
+    console.error('login error', e);
+    err.innerHTML='<i class="ti ti-alert-circle"></i> Errore di accesso. Riprova.'; err.style.display='flex'; return;
   }
-
-  _recordFailedLogin(email);
-  const left=_attemptsLeft(email);
-  if(_isLockedOut(email)){
-    err.innerHTML=`<i class="ti ti-lock"></i> Troppi tentativi falliti. Account bloccato per ${_lockoutMinutesLeft(email)} minuti.`;
-  } else {
-    err.innerHTML=left>0
-      ?`<i class="ti ti-alert-circle"></i> Email o password non corretti. Ancora ${left} tentativ${left===1?'o':'i'}.`
-      :'<i class="ti ti-alert-circle"></i> Email o password non corretti.';
-  }
-  err.style.display='flex';
 
   }catch(e){
     console.error('doLogin error',e);
@@ -2921,6 +2912,7 @@ function goLogin(){
   if(currentUser&&currentUser.tableId) _endSession(currentUser.tableId);
   // Stacca tutti i listener chat per non lasciarli attivi dopo il logout
   try{ if(typeof _stopAdminUnread==='function') _stopAdminUnread(); }catch(e){}
+  try{ if(typeof firebase!=='undefined' && firebase.auth) firebase.auth().signOut(); }catch(e){}
   try{ if(_chatUnsubStudent){ _chatUnsubStudent(); _chatUnsubStudent=null; } }catch(e){}
   try{ if(_chatUnsubAdmin){ _chatUnsubAdmin(); _chatUnsubAdmin=null; } }catch(e){}
   try{ if(typeof _groupUnsubs==='object'){ Object.values(_groupUnsubs).forEach(fn=>{try{fn&&fn();}catch(e){}}); _groupUnsubs={}; } }catch(e){}
@@ -6323,6 +6315,97 @@ async function _endSession(userId){
   }catch(e){}
 }
 
+/* ── MIGRAZIONE A FIREBASE AUTH (Stadio 1) ────────────────────────────
+   A ogni login valido, crea/aggancia l'account su Firebase Authentication
+   e registra la mappatura uid→tableId (serve alle regole dello Stadio 2).
+   È a prova di errore: qualsiasi problema NON blocca il login.
+   Prerequisito perché faccia effetto: in Firebase Console →
+   Authentication → Sign-in method → abilitare "Email/Password". */
+async function _syncFirebaseAuth(email, password, tableId, asAdmin){
+  try{
+    if(!email || !password) return;
+    if(typeof firebase==='undefined' || !firebase.auth) return;
+    const auth = firebase.auth();
+    let cred=null;
+    try{
+      cred = await auth.signInWithEmailAndPassword(email, password);
+    }catch(e){
+      const c = e && e.code;
+      if(c==='auth/user-not-found' || c==='auth/invalid-login-credentials'){
+        try{ cred = await auth.createUserWithEmailAndPassword(email, password); }
+        catch(e2){ console.warn('[auth] create non riuscita:', e2 && e2.code); return; }
+      } else {
+        console.warn('[auth] signin non riuscito:', c);  // es. provider non attivo, wrong-password
+        return;
+      }
+    }
+    const uid = (cred && cred.user && cred.user.uid) || (auth.currentUser && auth.currentUser.uid);
+    if(!uid) return;
+    if(asAdmin){
+      await db.collection('admins').doc(uid).set({ email, ts: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+    } else if(tableId){
+      await db.collection('users').doc(tableId).set({ authUid: uid, authMigrated: true }, {merge:true});
+      await db.collection('uidToTable').doc(uid).set({ tableId }, {merge:true});
+    }
+  }catch(e){ console.warn('[auth] sync error', e); }
+}
+
+// Dopo l'autenticazione Firebase: risolve tableId, carica il profilo,
+// applica il gate ruolo + controllo dispositivo, poi entra.
+async function _afterAuthStudent(uid, btn, err){
+  const reset=()=>{ if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} };
+  let tableId=null;
+  try{ const m=await db.collection('uidToTable').doc(uid).get(); if(m.exists) tableId=m.data().tableId; }catch(_){}
+  if(!tableId){
+    try{ await firebase.auth().signOut(); }catch(_){}
+    if(err){ err.innerHTML='<i class="ti ti-alert-circle"></i> Account non collegato. Contatta la segreteria.'; err.style.display='flex'; }
+    reset(); return;
+  }
+  let user=null;
+  try{ const s=await db.collection('users').doc(tableId).get(); if(s.exists){ user=s.data(); user.tableId=tableId; } }catch(_){}
+  if(!user){
+    try{ await firebase.auth().signOut(); }catch(_){}
+    if(err){ err.innerHTML='<i class="ti ti-alert-circle"></i> Profilo non trovato. Contatta la segreteria.'; err.style.display='flex'; }
+    reset(); return;
+  }
+  if(user.role!=='student-active'){
+    try{ await firebase.auth().signOut(); }catch(_){}
+    if(err){ err.innerHTML = user.role==='student-pending'
+      ? '<i class="ti ti-clock"></i> Il tuo account è in attesa di attivazione da parte della segreteria.'
+      : '<i class="ti ti-lock"></i> Accesso non abilitato. Contatta la segreteria.'; err.style.display='flex'; }
+    reset(); return;
+  }
+  const devStatus = await _checkDeviceAuth(user.tableId);
+  if(devStatus==='first_device'){
+    if(_ejsReady && _ejsConfig.templateStudent && user.email){
+      const sent = await _sendLoginOtp(user);
+      if(sent){ _showOtpScreen(user); reset(); return; }
+    }
+    await _registerDevice(user.tableId);
+  } else if(devStatus==='new_device' || devStatus==='pending'){
+    if(devStatus==='new_device'){ try{ await requestDeviceChange(user.tableId,(user.nome||'')+' '+(user.cognome||'')); }catch(_){} }
+    try{ await firebase.auth().signOut(); }catch(_){}
+    if(err){ err.innerHTML = devStatus==='new_device'
+      ? '<i class="ti ti-device-mobile" style="font-size:16px;flex-shrink:0"></i> Dispositivo diverso da quello registrato: il cambio deve essere autorizzato dall\'amministratore. Contatta la segreteria.'
+      : '<i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i> Cambio dispositivo in attesa di autorizzazione dell\'amministratore.'; err.style.display='flex'; }
+    reset(); return;
+  }
+  await _completeStudentLogin(user);
+  reset();
+}
+
+// Assicura un "invito" (email→tableId) per ogni studente già esistente,
+// così può fare il primo accesso anche con le regole chiuse.
+async function _backfillInvites(){
+  try{
+    for(const u of USERS){
+      if(u && u.email && u.tableId){
+        try{ await db.collection('invites').doc(_emailKey(u.email)).set({tableId:u.tableId, role:u.role||''},{merge:true}); }catch(_){}
+      }
+    }
+  }catch(e){ console.warn('backfill invites', e); }
+}
+
 // ── COMPLETAMENTO LOGIN STUDENTE (riusato dopo verifica OTP) ──
 async function _completeStudentLogin(user){
   currentUser=user;
@@ -6340,6 +6423,16 @@ async function _completeStudentLogin(user){
    al solo proprietario, così il codice non è leggibile da altri. */
 let _otpUser=null;
 function _maskEmail(e){ if(!e) return ''; const p=String(e).split('@'); if(p.length<2) return e; return p[0].slice(0,2)+'***@'+p[1]; }
+
+async function _registerDevice(userId){
+  try{
+    await db.collection('device_auth').doc(userId).set({
+      fingerprint:_getDeviceFingerprint(), device:_getDeviceInfo().platform,
+      approved:true, pendingFingerprint:null, pendingDevice:null,
+      registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+  }catch(e){ console.warn('device register error',e); }
+}
 
 async function _sendLoginOtp(user){
   try{
@@ -6368,8 +6461,8 @@ function _showOtpScreen(user){
     ov.style.cssText='position:fixed;inset:0;background:rgba(14,26,9,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px';
     ov.innerHTML=`<div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:28px 26px;box-shadow:0 16px 44px rgba(0,0,0,.3)">
       <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#234A14,#16290D);display:flex;align-items:center;justify-content:center;margin-bottom:16px"><i class="ti ti-mail-check" style="color:#fff;font-size:24px"></i></div>
-      <h2 style="font-size:19px;margin:0 0 6px;color:#16290D;font-family:var(--font-display,serif)">Verifica nuovo dispositivo</h2>
-      <p style="font-size:13px;color:#5C6450;line-height:1.55;margin:0 0 16px">Abbiamo inviato un codice a <strong id="otp-email"></strong>. Inseriscilo per autorizzare l'accesso da questo dispositivo.</p>
+      <h2 style="font-size:19px;margin:0 0 6px;color:#16290D;font-family:var(--font-display,serif)">Conferma il tuo accesso</h2>
+      <p style="font-size:13px;color:#5C6450;line-height:1.55;margin:0 0 16px">Abbiamo inviato un codice a <strong id="otp-email"></strong>. Inseriscilo per confermare l'accesso e registrare questo come tuo dispositivo. Per cambiare dispositivo in futuro servirà l'autorizzazione della segreteria.</p>
       <input id="otp-input" inputmode="numeric" maxlength="6" placeholder="––––––" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')_verifyLoginOtp()" style="width:100%;text-align:center;letter-spacing:8px;font-size:24px;font-weight:700;padding:12px;border:1.5px solid #DDD9C9;border-radius:12px;outline:none;margin-bottom:6px;box-sizing:border-box">
       <div id="otp-msg" style="font-size:12px;min-height:16px;margin-bottom:10px"></div>
       <button onclick="_verifyLoginOtp()" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#234A14,#33651C);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Verifica e accedi</button>
@@ -6484,13 +6577,8 @@ async function _checkDeviceAuth(userId){
     const snap = await db.collection('device_auth').doc(userId).get();
     const fp = _getDeviceFingerprint();
     if(!snap.exists){
-      // Prima volta — registra dispositivo
-      await db.collection('device_auth').doc(userId).set({
-        fingerprint: fp,
-        device: _getDeviceInfo().platform,
-        registeredAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      return 'ok';
+      // Primo dispositivo mai usato — va verificato via OTP prima di registrarlo
+      return 'first_device';
     }
     const data = snap.data();
     if(data.fingerprint === fp) return 'ok';
@@ -8709,64 +8797,35 @@ async function _rpCheckEmailAsync(){
     errEl.style.display='flex'; return;
   }
 
-  // Cerca utente — prima in USERS (se admin caricato), poi direttamente su Firestore
-  let user = USERS.find(u=>u.email && u.email.toLowerCase()===email);
-  if(!user){
-    // Cerca su Firestore senza caricare tutti gli utenti
-    try{
-      const snap = await db.collection('users')
-        .where('email','==',email).limit(1).get();
-      if(!snap.empty) user = snap.docs[0].data();
-    }catch(_){}
-  }
-
-  // Risposta sempre generica — non rivela se email esiste o no (sicurezza)
   if(btn){ btn.disabled=true; btn.textContent='Invio in corso…'; }
   errEl.style.display='none';
 
-  if(user && user.role !== 'admin'){
-    try{
-      // 1. Genera token monouso (scade 15 minuti)
-      const token = Array.from(crypto.getRandomValues(new Uint8Array(24)))
-        .map(b=>b.toString(16).padStart(2,'0')).join('');
-      const expiresAt = Date.now() + 15 * 60 * 1000; // 15 min
-
-      await db.collection('pwdResetTokens').doc(token).set({
-        email:     email,
-        tableId:   user.tableId || '',
-        created:   Date.now(),
-        expiresAt: expiresAt,
-        used:      false
-      });
-
-      // 2. Costruisci link reset
-      const resetUrl = window.location.href.split('?')[0] + '?pwdreset=' + token;
-
-      // 3. Manda email tramite EmailJS
-      if(_ejsReady && _ejsConfig.service && _ejsConfig.templateStudent){
-        await emailjs.send(_ejsConfig.service, _ejsConfig.templateStudent, {
-          to_email:  email,
-          to_name:   (user.nome||'') + ' ' + (user.cognome||''),
-          subject:   'Reset password — Scuola Faunistica Venatoria',
-          message:   `Hai richiesto il reset della password.
-
-Clicca il link qui sotto per impostare una nuova password (valido 15 minuti):
-
-${resetUrl}
-
-Se non hai richiesto tu questo reset, ignora questa email.`
-        });
-      } else {
-        // EmailJS non configurato — mostra link direttamente (solo per test/sviluppo)
-        console.warn('[SFV] EmailJS non configurato. Link reset:', resetUrl);
+  try{
+    await firebase.auth().sendPasswordResetEmail(email);
+  }catch(e){
+    const c = e && e.code;
+    if(c==='auth/user-not-found'){
+      // Nessun account: forse non ha ancora fatto il primo accesso
+      let inv=null;
+      try{ const s=await db.collection('invites').doc(_emailKey(email)).get(); if(s.exists) inv=s.data(); }catch(_){}
+      if(inv){
+        errMsg.textContent='Non hai ancora impostato la password. Torna al login, inserisci la tua email e la password che vuoi usare: al primo accesso l\'account verrà creato.';
+        errEl.style.display='flex';
+        if(btn){ btn.disabled=false; btn.textContent='Invia link'; }
+        return;
       }
-    } catch(e){
-      console.error('[SFV] rpCheckEmail error:', e);
+      // altrimenti risposta generica sotto (non riveliamo se l'email esiste)
+    } else if(c==='auth/operation-not-allowed'){
+      errMsg.textContent='Servizio non disponibile al momento. Contatta la segreteria.'; errEl.style.display='flex';
+      if(btn){ btn.disabled=false; btn.textContent='Invia link'; } return;
+    } else {
+      console.warn('[SFV] reset error:', c);
     }
   }
-  // Sempre mostra "email inviata" — non rivela se account esiste
+
+  // Risposta sempre generica — non rivela se l'account esiste
   document.getElementById('rp-step-email').style.display='none';
-  document.getElementById('rp-step-sent').style.display='';
+  const sentStep=document.getElementById('rp-step-sent'); if(sentStep) sentStep.style.display='';
   document.getElementById('rp-foot').innerHTML =
     '<button class="btn btn-sm" onclick="closeResetPwd()">Chiudi</button>';
   if(btn){ btn.disabled=false; btn.textContent='Invia link'; }
@@ -8992,6 +9051,18 @@ if(document.readyState==='loading'){
 let _faUser = null; // utente che sta creando la password
 
 function faShowOverlay(user){
+  // Solo gli utenti ATTIVATI dall'admin possono impostare la password ed entrare.
+  // Un iscritto dal sito ma non ancora attivato (pending) o bloccato non deve entrare.
+  if(user && user.role && user.role!=='student-active' && user.role!=='admin'){
+    const err=document.getElementById('li-error');
+    if(err){
+      err.innerHTML = user.role==='student-pending'
+        ? '<i class="ti ti-clock"></i> Il tuo account è in attesa di attivazione da parte della segreteria. Ti avviseremo appena sarà pronto.'
+        : '<i class="ti ti-lock"></i> Accesso non abilitato. Contatta la segreteria.';
+      err.style.display='flex';
+    }
+    return;
+  }
   _faUser = user;
   // Rimuovi overlay esistente se presente
   const existing = document.getElementById('first-access-overlay');
@@ -9108,45 +9179,48 @@ async function faSubmit(){
   btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Salvataggio...';
 
   try{
-    const hashed='$sha256$'+await sha256(pwd1);
-    const user=_faUser;
-
-    // Salva su Firestore
-    const userRef=db.collection('users').doc(user.tableId||user.codiceFiscale||user.email);
-    await userRef.update({
-      password: hashed,
-      firstAccess: false,
-      firstAccessDate: new Date().toISOString()
-    });
-
-    // Aggiorna in memoria
-    const idx=USERS.findIndex(u=>u.email===user.email);
-    if(idx!==-1){
-      USERS[idx].password=hashed;
-      USERS[idx].firstAccess=false;
+    const user=_faUser; // { email, tableId, role, ... }
+    if(!user || !user.email || !user.tableId){
+      errMsg.textContent='Sessione non valida. Torna al login e riprova.'; errEl.style.display='flex';
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-shield-check"></i> Salva password e accedi'; return;
     }
-    user.password=hashed;
-    user.firstAccess=false;
+
+    // Crea l'account su Firebase Authentication con la password scelta
+    let cred=null;
+    try{
+      cred = await firebase.auth().createUserWithEmailAndPassword(user.email, pwd1);
+    }catch(e){
+      const c=e&&e.code;
+      if(c==='auth/email-already-in-use'){
+        errMsg.textContent='Esiste già un accesso per questa email. Torna al login e usa la tua password (o "Password dimenticata?").';
+      }else if(c==='auth/operation-not-allowed'){
+        errMsg.textContent='Accesso Email/Password non abilitato su Firebase. Contatta l\'amministratore.';
+      }else if(c==='auth/weak-password'){
+        errMsg.textContent='Password troppo debole (minimo 6 caratteri).';
+      }else{
+        errMsg.textContent='Errore nella creazione dell\'account ('+(c||'')+').';
+      }
+      errEl.style.display='flex';
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-shield-check"></i> Salva password e accedi'; return;
+    }
+
+    const uid=cred.user.uid;
+    // Collega uid → tableId (necessario alle regole) e chiudi il primo accesso
+    try{ await db.collection('uidToTable').doc(uid).set({ tableId:user.tableId },{merge:true}); }catch(_){}
+    try{ await db.collection('users').doc(user.tableId).set({ firstAccess:false, firstAccessDate:new Date().toISOString() },{merge:true}); }catch(_){}
+
+    const idx=USERS.findIndex(u=>u.email===user.email);
+    if(idx!==-1){ USERS[idx].firstAccess=false; }
 
     faHideOverlay();
-
-    // Entra nella piattaforma
-    currentUser=user;
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('shell').style.display='flex';
-    // Carica SOLO i dati di questo studente
-    await loadStudentData(user.tableId);
-    applyRole(user.role);
-    const di=_getDeviceInfo();
-    logAccess(user.tableId||user.email,'login',`Primo accesso — password creata — ${di.platform}`);
-    if(user.role==='student-active'||user.role==='student-pending'){
-      _startSession(user.tableId);
-    }
-    showToast('✅ Password creata! Benvenuto/a nella piattaforma.');
+    logAccess(user.tableId,'login',`Primo accesso — account creato — ${_getDeviceInfo().platform}`);
+    showToast('✅ Account creato! Ora confermiamo il tuo dispositivo.');
+    // Prosegue con controllo dispositivo (OTP primo dispositivo) e ingresso
+    await _afterAuthStudent(uid, null, document.getElementById('li-error'));
 
   } catch(e){
     console.error('faSubmit error:',e);
-    errMsg.textContent='Errore nel salvataggio. Controlla la connessione e riprova.';
+    errMsg.textContent='Errore imprevisto. Controlla la connessione e riprova.';
     errEl.style.display='flex';
     btn.disabled=false;
     btn.innerHTML='<i class="ti ti-shield-check"></i> Salva password e accedi';
