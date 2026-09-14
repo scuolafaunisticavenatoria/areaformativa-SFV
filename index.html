@@ -2063,10 +2063,24 @@ let _adminHashReady=false;
 
 async function _initAdminHash(){
   if(_adminHashReady)return;
-  _adminHashReady=true;
+  // Se Firebase non è ancora pronto, usa un default PROVVISORIO ma non
+  // marcare "ready": così al login (db pronto) ricarica la password reale.
+  if(typeof db==='undefined' || !db || typeof db.collection!=='function'){
+    if(!_adminPwdOverride) _adminPwdOverride=_ADMIN_DEFAULT_HASH;
+    return;
+  }
+  // Carica la password admin personalizzata PRIMA del login (se presente).
+  try{
+    const c = await _fsGet('config','admin');
+    if(c && c.adminHash) _adminPwdOverride = c.adminHash;
+  }catch(_){}
   if(!_adminPwdOverride){
     _adminPwdOverride=_ADMIN_DEFAULT_HASH;
   }
+  if(_adminPwdOverride && !_adminPwdOverride.startsWith('$sha256$')){
+    _adminPwdOverride='$sha256$'+await sha256(_adminPwdOverride);
+  }
+  _adminHashReady=true;
 }
 
 async function _chkAdminAsync(pwd){
