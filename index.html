@@ -739,6 +739,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
       <i class="ti ti-info-circle" style="font-size:14px;color:var(--green-600);flex-shrink:0;margin-top:1px"></i>
       <span>L'accesso è riservato agli iscritti <strong>attivati dalla segreteria</strong>. Per iscriverti o farti abilitare, contatta la scuola.</span>
     </div>
+    <div style="text-align:center;font-size:9px;color:#c8c8c0;margin-top:8px;letter-spacing:.06em">build AUTH-4</div>
 
     <div style="text-align:right;margin-top:4px;margin-bottom:2px">
       <a href="#" onclick="openResetPwd();return false" style="color:var(--text-muted);font-size:11px;text-decoration:none;">Password dimenticata?</a>
@@ -2818,17 +2819,30 @@ async function doLogin(){
       cred = await firebase.auth().signInWithEmailAndPassword(adminEmail, pwd);
       ok = true;
     }catch(e){
-      const c = e && e.code;
-      if(c==='auth/user-not-found' || c==='auth/invalid-login-credentials' || c==='auth/invalid-credential'){
-        // Primo setup: verifica la password admin "legacy", poi crea l'account Auth
-        if(await _chkAdminAsync(pwd)){
-          try{ cred = await firebase.auth().createUserWithEmailAndPassword(adminEmail, pwd); ok = true; }
-          catch(e2){ err.innerHTML='<i class="ti ti-alert-circle"></i> Impossibile creare l\'account admin ('+(e2.code||'')+').'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return; }
+      const c = (e && e.code) || 'errore';
+      // Qualunque sia il motivo del signIn fallito, se la password admin è
+      // corretta creiamo/agganciamo l'account (bootstrap una tantum).
+      if(await _chkAdminAsync(pwd)){
+        try{
+          cred = await firebase.auth().createUserWithEmailAndPassword(adminEmail, pwd); ok = true;
+        }catch(e2){
+          const c2 = (e2 && e2.code) || '';
+          if(c2==='auth/email-already-in-use'){
+            try{ cred = await firebase.auth().signInWithEmailAndPassword(adminEmail, pwd); ok = true; }
+            catch(e3){
+              err.innerHTML='<i class="ti ti-alert-circle"></i> Account admin già presente con password diversa. Su Firebase → Authentication elimina admin@sfv.it e riprova. ['+((e3&&e3.code)||'')+']';
+              err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+            }
+          } else if(c2==='auth/operation-not-allowed'){
+            err.innerHTML='<i class="ti ti-alert-circle"></i> Abilita Email/Password su Firebase → Authentication → Sign-in method.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+          } else {
+            err.innerHTML='<i class="ti ti-alert-circle"></i> Impossibile creare l\'account admin ['+c2+'].'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+          }
         }
-      } else if(c==='auth/operation-not-allowed'){
-        err.innerHTML='<i class="ti ti-alert-circle"></i> Su Firebase non è abilitato l\'accesso Email/Password. Attivalo in Authentication → Sign-in method.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
-      } else if(c==='auth/too-many-requests'){
-        err.innerHTML='<i class="ti ti-lock"></i> Troppi tentativi. Riprova più tardi.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+      } else {
+        _recordFailedLogin(email);
+        err.innerHTML='<i class="ti ti-alert-circle"></i> Password admin non corretta. [diag: '+c+']';
+        err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
       }
     }
     if(ok && cred){
