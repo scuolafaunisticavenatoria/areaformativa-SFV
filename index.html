@@ -2375,6 +2375,12 @@ async function deleteStudentConfirm(tableId, fullName, email){
     showToast('Eliminazione in corso…');
     await _fsDel('users',   tableId);
     await _fsDel('accessi', tableId);
+    try{ await db.collection('device_auth').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('progress').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('sessions').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('loginOtp').doc(tableId).delete(); }catch(_){}
+    if(email){ try{ await db.collection('invites').doc(_emailKey(email)).delete(); }catch(_){} }
+    try{ const snap=await db.collection('uidToTable').where('tableId','==',tableId).get(); for(const d of snap.docs){ await d.ref.delete(); } }catch(_){}
     // Rimuovi dalla memoria locale
     const idx = USERS.findIndex(u=>u.tableId===tableId);
     if(idx>=0) USERS.splice(idx,1);
@@ -7788,17 +7794,36 @@ async function sdRejectStudent(tableId){
 
 async function sdDeleteStudent(tableId, name){
   if(!confirm(`Eliminare definitivamente ${name}?\nQuesta operazione è irreversibile.`)) return;
-  const idx=USERS.findIndex(u=>u.tableId===tableId);
-  if(idx>=0) USERS.splice(idx,1);
-  delete presets[tableId];
-  delete expiryDates[tableId];
-  delete studentProgress[tableId];
-  delete accessLog[tableId];
-  // Rimuovi da Firestore
-  try{ await _db().collection('users').doc(tableId).delete(); }catch(e){}
-  refreshDashboardAdmin();
-  showToast('Studente eliminato','warning');
-  closeStudentDetail();
+  const u = USERS.find(x=>x.tableId===tableId);
+  const email = u ? (u.email||'') : '';
+  try{
+    // Firestore: profilo + tutti i dati collegati
+    await _fsDel('users', tableId);
+    await _fsDel('accessi', tableId);
+    try{ await db.collection('device_auth').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('progress').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('sessions').doc(tableId).delete(); }catch(_){}
+    try{ await db.collection('loginOtp').doc(tableId).delete(); }catch(_){}
+    if(email){ try{ await db.collection('invites').doc(_emailKey(email)).delete(); }catch(_){} }
+    // uidToTable: elimina la mappatura che punta a questo studente
+    try{
+      const snap = await db.collection('uidToTable').where('tableId','==',tableId).get();
+      for(const d of snap.docs){ await d.ref.delete(); }
+    }catch(_){}
+    // Memoria locale
+    const idx=USERS.findIndex(x=>x.tableId===tableId);
+    if(idx>=0) USERS.splice(idx,1);
+    delete presets[tableId];
+    delete expiryDates[tableId];
+    if(typeof studentProgress!=='undefined') delete studentProgress[tableId];
+    if(typeof accessLog!=='undefined') delete accessLog[tableId];
+    refreshDashboardAdmin();
+    if(typeof filterUsersTable==='function') filterUsersTable();
+    showToast('Studente eliminato','warning');
+    closeStudentDetail();
+  }catch(e){
+    showToast('Errore durante l\'eliminazione: '+(e.message||e),'error');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
