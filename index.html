@@ -6507,7 +6507,11 @@ async function _sendLoginOtp(user){
       student_email: user.email
     });
     return true;
-  }catch(e){ console.warn('OTP send error',e); return false; }
+  }catch(e){
+    console.warn('OTP send error',e);
+    try{ showToast('Invio codice email non riuscito: '+((e&&(e.text||e.message))||'errore')+((e&&e.status)?(' ['+e.status+']'):''),'error',7000); }catch(_){}
+    return false;
+  }
 }
 
 function _showOtpScreen(user){
