@@ -2589,6 +2589,7 @@ async function _checkAdminToken(){
     refreshDashboardAdmin();
     loadEmailJSConfig().then(()=>checkExpiryReminders());
     loadCertificateConfig();
+    _backfillInvites(); // crea gli inviti per gli studenti (necessari al primo accesso)
     setTimeout(()=>checkAndRunAutoBackup(), 3000);
     applyRole('admin');
     setTimeout(()=>_purgeExpiredTokens(), 2000); // pulizia token in background
@@ -2910,6 +2911,25 @@ async function doLogin(){
         faShowOverlay({ email:email, tableId:inv.tableId, role:inv.role||'student-active', firstAccessViaInvite:true });
         return;
       }
+      // Fallback: nessun invito, ma lo studente esiste già in 'users'
+      // (es. creato dal database esterno, che non scrive l'invito).
+      try{
+        const q = await db.collection('users').where('email','==',email).limit(1).get();
+        if(!q.empty){
+          const ud = q.docs[0].data();
+          const tid = ud.tableId || q.docs[0].id;
+          if(ud.role && ud.role!=='student-active'){
+            err.innerHTML = ud.role==='student-pending'
+              ? '<i class="ti ti-clock"></i> Il tuo account è in attesa di attivazione da parte della segreteria.'
+              : '<i class="ti ti-lock"></i> Accesso non abilitato. Contatta la segreteria.';
+            err.style.display='flex'; return;
+          }
+          try{ await db.collection('invites').doc(_emailKey(email)).set({tableId:tid, role:ud.role||'student-active'},{merge:true}); }catch(_){}
+          err.style.display='none';
+          faShowOverlay({ email:email, tableId:tid, role:ud.role||'student-active', firstAccessViaInvite:true });
+          return;
+        }
+      }catch(_){}
       _recordFailedLogin(email);
       err.innerHTML='<i class="ti ti-alert-circle"></i> Email o password non corretti.'; err.style.display='flex'; return;
     }
