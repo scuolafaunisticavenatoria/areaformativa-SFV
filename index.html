@@ -2644,8 +2644,14 @@ function _showTokenError(msg){
 // loadFromStorage() viene chiamata SOLO dopo login admin confermato.
 // loadStudentData() viene chiamata SOLO dopo login studente confermato.
 _initAdminHash();
-_checkPwdResetToken(); // controlla se c'è ?pwdreset= nell'URL
-_checkAdminToken().then(()=>{
+// I vecchi accessi tramite link (?admtok= per entrare come admin senza password e
+// ?pwdreset= per cambiare password senza login) sono DISATTIVATI: aggiravano Firebase
+// Authentication. Il recupero password usa ora l'email ufficiale di Firebase.
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(p.has('admtok')||p.has('pwdreset')) window.history.replaceState({},document.title,window.location.pathname);
+})();
+Promise.resolve().then(()=>{
   const loader=document.getElementById('fb-loading');
   const login=document.getElementById('login-screen');
   if(loader) loader.style.display='none';
@@ -5623,19 +5629,28 @@ async function changeMyPassword(){
   if(!currentPwd){showErr('Inserisci la password attuale.');return;}
   if(!newPwd||!confirm){showErr('Inserisci e conferma la nuova password.');return;}
 
-  const u = USERS.find(x=>x.tableId===currentUser.tableId);
-  if(!u){showErr('Utente non trovato.');return;}
-
-  // Verifica password attuale
-  const ok = await checkPassword(currentPwd, u.password);
-  if(!ok){showErr('La password attuale non è corretta.');return;}
-
   const pwdErrors=validatePasswordStrength(newPwd);
   if(pwdErrors.length){showErr('La nuova password deve avere: '+pwdErrors.join(', ')+'.');return;}
   if(newPwd!==confirm){showErr('Le due password non coincidono.');return;}
 
-  u.password='$sha256$'+await sha256(newPwd);
-  await saveToStorage({user:u});
+  // Il login usa Firebase Authentication: la password va cambiata lì
+  // (prima veniva aggiornato solo un campo nel database, senza effetto sul login).
+  const fu = firebase.auth().currentUser;
+  if(!fu || !fu.email){showErr('Sessione scaduta. Esci e rientra, poi riprova.');return;}
+  try{
+    const cred = firebase.auth.EmailAuthProvider.credential(fu.email, currentPwd);
+    await fu.reauthenticateWithCredential(cred);
+  }catch(e){
+    const c=(e&&e.code)||'';
+    if(c==='auth/too-many-requests'){showErr('Troppi tentativi. Riprova tra qualche minuto.');return;}
+    showErr('La password attuale non è corretta.');return;
+  }
+  try{
+    await fu.updatePassword(newPwd);
+  }catch(e){
+    showErr('Impossibile aggiornare la password ('+((e&&e.code)||'errore')+'). Riprova.');return;
+  }
+  try{ await db.collection('users').doc(currentUser.tableId).set({ pwdUpdatedAt:new Date().toISOString() },{merge:true}); }catch(_){}
   ['my-pwd-current','my-pwd-new','my-pwd-confirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   if(okEl){ okEl.style.display='flex'; setTimeout(()=>okEl.style.display='none', 4000); }
   showToast('Password aggiornata con successo','success');
