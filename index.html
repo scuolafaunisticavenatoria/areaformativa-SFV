@@ -1184,6 +1184,18 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
             Pubblica <strong>verifica.html</strong> sullo stesso server di <strong>index.html</strong>, oppure caricala separatamente sul tuo sito.
           </div>
         </div>
+        <div id="admin-recovery-section" style="max-width:520px;margin-bottom:18px">
+          <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:16px 18px;box-shadow:var(--shadow-sm)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <i class="ti ti-mail-check" style="font-size:18px;color:var(--green-700)"></i>
+              <div style="font-size:14px;font-weight:700">Email di recupero admin</div>
+            </div>
+            <div id="adm-recovery-status" style="font-size:12.5px;color:var(--text-secondary);line-height:1.5">—</div>
+            <button class="btn btn-primary" id="adm-recovery-btn" onclick="linkAdminRecoveryEmail()" style="margin-top:12px;display:none;background:var(--green-700);border-color:var(--green-700)">
+              <i class="ti ti-link"></i> Collega scuolafaunisticavenatoria@gmail.com
+            </button>
+          </div>
+        </div>
         <div id="admin-pwd-section" style="max-width:520px;margin-bottom:24px">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
             <div style="width:38px;height:38px;background:var(--green-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -2140,6 +2152,12 @@ async function _initAdminHash(){
   _adminHashReady=true;
 }
 
+// Indirizzi possibili dell'account admin su Firebase Authentication:
+// prima l'email reale di recupero (dopo il collegamento), poi quella storica.
+const ADMIN_RECOVERY_EMAIL='scuolafaunisticavenatoria@gmail.com';
+const ADMIN_LOGIN_EMAILS=[ADMIN_RECOVERY_EMAIL,'admin@sfv.it'];
+function _isAdminLoginName(e){ e=String(e||'').trim().toLowerCase(); return e==='admin' || ADMIN_LOGIN_EMAILS.includes(e); }
+
 async function _chkAdminAsync(pwd){
   await _initAdminHash();
   const h='$sha256$'+await sha256(pwd);
@@ -2944,40 +2962,21 @@ async function doLogin(){
 
   if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Accesso...';}
 
-  const isAdmin=(email==='admin'||email==='admin@sfv.it');
+  const isAdmin=_isAdminLoginName(email);
   if(isAdmin){
-    const adminEmail='admin@sfv.it';
-    let cred=null, ok=false;
-    try{
-      cred = await firebase.auth().signInWithEmailAndPassword(adminEmail, pwd);
-      ok = true;
-    }catch(e){
-      const c = (e && e.code) || 'errore';
-      // Qualunque sia il motivo del signIn fallito, se la password admin è
-      // corretta creiamo/agganciamo l'account (bootstrap una tantum).
-      if(await _chkAdminAsync(pwd)){
-        try{
-          cred = await firebase.auth().createUserWithEmailAndPassword(adminEmail, pwd); ok = true;
-        }catch(e2){
-          const c2 = (e2 && e2.code) || '';
-          if(c2==='auth/email-already-in-use'){
-            try{ cred = await firebase.auth().signInWithEmailAndPassword(adminEmail, pwd); ok = true; }
-            catch(e3){
-              err.innerHTML='<i class="ti ti-alert-circle"></i> Account admin già presente con password diversa. Su Firebase → Authentication elimina admin@sfv.it e riprova. ['+((e3&&e3.code)||'')+']';
-              err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
-            }
-          } else if(c2==='auth/operation-not-allowed'){
-            err.innerHTML='<i class="ti ti-alert-circle"></i> Abilita Email/Password su Firebase → Authentication → Sign-in method.'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
-          } else {
-            err.innerHTML='<i class="ti ti-alert-circle"></i> Impossibile creare l\'account admin ['+c2+'].'; err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
-          }
-        }
-      } else {
-        _recordFailedLogin(email);
-        err.innerHTML='<i class="ti ti-alert-circle"></i> Password admin non corretta. [diag: '+c+']';
-        err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
-      }
+    let cred=null, ok=false, lastCode='';
+    for(const ae of ADMIN_LOGIN_EMAILS){
+      try{ cred=await firebase.auth().signInWithEmailAndPassword(ae, pwd); ok=true; break; }
+      catch(e){ lastCode=(e&&e.code)||'errore'; if(lastCode==='auth/too-many-requests') break; }
     }
+    if(!ok){
+      _recordFailedLogin(email);
+      err.innerHTML = lastCode==='auth/too-many-requests'
+        ? '<i class="ti ti-lock"></i> Troppi tentativi. Riprova tra qualche minuto oppure usa "Password dimenticata?".'
+        : '<i class="ti ti-alert-circle"></i> Password admin non corretta.';
+      err.style.display='flex'; if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Accedi';} return;
+    }
+    const adminEmail=(cred&&cred.user&&cred.user.email)||ADMIN_LOGIN_EMAILS[1];
     if(ok && cred){
       err.style.display='none';
       _loginAttempts[email]={count:0,lockedUntil:0};
@@ -5690,7 +5689,7 @@ function populateSettingsView(){
   const isStudent = currentUser && (currentUser.role === 'student-active' || currentUser.role === 'student-pending');
 
   // Sezioni solo admin
-  ['admin-pwd-section','emailjs-section','certificate-section','student-reset-section','backup-section'].forEach(id=>{
+  ['admin-recovery-section','admin-pwd-section','emailjs-section','certificate-section','student-reset-section','backup-section'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display = isAdmin ? '' : 'none';
   });
@@ -5708,6 +5707,7 @@ function populateSettingsView(){
     populateCertificateFields();
     loadBackupStatus();
     loadDriveBackupStatus();
+    try{ renderAdminRecoveryStatus(); }catch(_){}
     // Popola select studenti per reset password admin
     const sel=document.getElementById('student-pwd-select');
     if(sel){
@@ -5781,21 +5781,58 @@ async function _changeAdminPasswordAsync(){
   errEl.style.display='none';okEl.style.display='none';
 
   if(!current||!newPwd||!confirm){showErr('Compila tutti i campi.');return;}
-  const currentOk=await _chkAdminAsync(current);
-  if(!currentOk){showErr('La password attuale non è corretta.');return;}
-
   const pwdErrors=validatePasswordStrength(newPwd);
   if(pwdErrors.length){showErr('La nuova password deve avere: '+pwdErrors.join(', ')+'.');return;}
   if(newPwd!==confirm){showErr('Le password non coincidono.');return;}
 
-  _adminPwdOverride='$sha256$'+await sha256(newPwd);
+  // La password di accesso è quella di Firebase Authentication: si cambia lì.
+  const fu=firebase.auth().currentUser;
+  if(!fu||!fu.email){showErr('Sessione scaduta: esci, rientra come admin e riprova.');return;}
+  try{
+    await fu.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(fu.email, current));
+  }catch(e){
+    const c=(e&&e.code)||'';
+    showErr(c==='auth/too-many-requests'?'Troppi tentativi. Riprova tra qualche minuto.':'La password attuale non è corretta.'); return;
+  }
+  try{ await fu.updatePassword(newPwd); }
+  catch(e){ showErr('Aggiornamento non riuscito ('+((e&&e.code)||'errore')+').'); return; }
+
   document.getElementById('adm-pwd-current').value='';
   document.getElementById('adm-pwd-new').value='';
   document.getElementById('adm-pwd-confirm').value='';
-  document.getElementById('pwd-strength-bar').style.display='none';
+  const sb=document.getElementById('pwd-strength-bar'); if(sb) sb.style.display='none';
   okEl.style.display='flex';
-  showToast('Password amministratore aggiornata','success');
-  saveToStorage({admin:true});
+  showToast('Password amministratore aggiornata (vale anche per il collegamento del Database)','success');
+}
+
+// ── Email di recupero dell'account admin ─────────────────────────
+function renderAdminRecoveryStatus(){
+  const el=document.getElementById('adm-recovery-status'); if(!el) return;
+  const fu=firebase.auth&&firebase.auth().currentUser;
+  const cur=(fu&&fu.email)||'—';
+  const linked=cur.toLowerCase()===ADMIN_RECOVERY_EMAIL;
+  el.innerHTML = linked
+    ? `<i class="ti ti-circle-check" style="color:var(--green-600)"></i> Collegata: <b>${_esc(cur)}</b>. Se dimentichi la password usa "Password dimenticata?" scrivendo <b>admin</b>.`
+    : `<i class="ti ti-alert-triangle" style="color:var(--amber-700)"></i> Non collegata: l'account admin usa <b>${_esc(cur)}</b>, una casella che non riceve email. Se dimentichi la password non potresti recuperarla.`;
+  const btn=document.getElementById('adm-recovery-btn'); if(btn) btn.style.display=linked?'none':'';
+}
+async function linkAdminRecoveryEmail(){
+  const fu=firebase.auth().currentUser;
+  if(!fu){ showToast('Sessione scaduta: rientra come admin','error'); return; }
+  if(!confirm(`Collegare l'account admin all'email ${ADMIN_RECOVERY_EMAIL}?\n\nRiceverai lì un'email di conferma: clicca il link per completare. Dopo il clic dovrai rientrare (sempre scrivendo "admin" e la tua password).`)) return;
+  const btn=document.getElementById('adm-recovery-btn'); if(btn) btn.disabled=true;
+  try{
+    firebase.auth().languageCode='it';
+    await fu.verifyBeforeUpdateEmail(ADMIN_RECOVERY_EMAIL);
+    const el=document.getElementById('adm-recovery-status');
+    if(el) el.innerHTML=`<i class="ti ti-mail" style="color:var(--blue-700)"></i> Email di conferma inviata a <b>${ADMIN_RECOVERY_EMAIL}</b>. Apri la posta (anche lo spam), clicca il link, poi esci e rientra come admin.`;
+    showToast('Email di conferma inviata','success');
+  }catch(e){
+    const c=(e&&e.code)||'';
+    if(c==='auth/requires-recent-login') showToast('Per sicurezza esci e rientra come admin, poi riprova subito.','warning');
+    else if(c==='auth/email-already-in-use') showToast(`${ADMIN_RECOVERY_EMAIL} è già usata da un altro account (forse uno studente di prova): eliminalo da Firebase → Authentication e riprova.`,'error');
+    else showToast('Non riuscito: '+(c||e.message),'error');
+  }finally{ if(btn) btn.disabled=false; }
 }
 
 /* Student password reset */
@@ -9397,9 +9434,13 @@ async function _rpCheckEmailAsync(){
     errMsg.textContent = 'Inserisci la tua email.';
     errEl.style.display='flex'; return;
   }
-  if(email==='admin'||email==='admin@sfv.it'){
-    errMsg.textContent = 'Per la password admin usa la sezione Impostazioni.';
-    errEl.style.display='flex'; return;
+  if(_isAdminLoginName(email)){
+    if(btn){ btn.disabled=true; btn.textContent='Invio in corso…'; }
+    try{ firebase.auth().languageCode='it'; await firebase.auth().sendPasswordResetEmail(ADMIN_RECOVERY_EMAIL); }catch(_){}
+    errEl.style.display='flex';
+    errMsg.textContent = `Se l'email di recupero è collegata all'account admin, è stato inviato un link a ${ADMIN_RECOVERY_EMAIL}. Controlla anche lo spam.`;
+    if(btn){ btn.disabled=false; btn.textContent='Invia link'; }
+    return;
   }
 
   if(btn){ btn.disabled=true; btn.textContent='Invio in corso…'; }
