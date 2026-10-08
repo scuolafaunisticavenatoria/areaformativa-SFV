@@ -770,7 +770,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
         <i class="ti ti-certificate" style="font-size:12px"></i> Verifica Attestato
       </a>
       <br>
-      <a href="https://www.scuolafaunisticavenatoria.it/privacy-policy" target="_blank" rel="noopener" style="color:var(--text-muted);font-size:11px;text-decoration:none;">
+      <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--text-muted);font-size:11px;text-decoration:none;">
         <i class="ti ti-shield-lock" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i>Privacy Policy
       </a>
       <span style="color:var(--border);margin:0 8px">|</span>
@@ -1280,6 +1280,14 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
           </div>
         </div>
 
+        <!-- Privacy — visibile a tutti -->
+        <div style="max-width:520px;margin-bottom:18px">
+          <a href="privacy.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);text-decoration:none;color:inherit;box-shadow:var(--shadow-sm)">
+            <span style="width:38px;height:38px;background:var(--green-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-shield-lock" style="font-size:18px;color:var(--green-700)"></i></span>
+            <span style="flex:1"><span style="display:block;font-size:14px;font-weight:600">Informativa privacy</span><span style="display:block;font-size:12px;color:var(--text-muted)">Come trattiamo i tuoi dati e quali diritti hai</span></span>
+            <i class="ti ti-external-link" style="color:var(--text-muted)"></i>
+          </a>
+        </div>
         <!-- Cambia la MIA password — SOLO STUDENTE loggato -->
         <div id="my-pwd-section" style="max-width:520px;display:none">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -2988,6 +2996,7 @@ async function doLogin(){
         loadEmailJSConfig().then(()=>checkExpiryReminders());
         loadCertificateConfig();
         _backfillInvites(); // assicura un "invito" per ogni studente già esistente
+        setTimeout(()=>_backfillPublicCerts(), 5000); // schede pubbliche di verifica attestati
         _syncContenuti();   // crea/aggiorna i contenuti separati per corso
         setTimeout(()=>checkAndRunAutoBackup(), 3000);
         setTimeout(()=>checkDriveBackupDue(), 9000);
@@ -4527,7 +4536,7 @@ function playVideoAt(idx){
   const vp=_getVideoPos(_currentLessonKey,idx);
   const savedSec=vp.s;
   const startParam=savedSec>5?`#t=${savedSec}s`:'';
-  document.getElementById('video-iframe').src=`https://player.vimeo.com/video/${numId}?autoplay=1&api=1${hashParam}${startParam}`;
+  document.getElementById('video-iframe').src=`https://player.vimeo.com/video/${numId}?autoplay=1&api=1&dnt=1${hashParam}${startParam}`;
   document.querySelectorAll('.vp-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
   if(currentUser&&currentUser.role!=='admin'&&idx>0){
     const label=document.getElementById('video-modal-label').textContent;
@@ -4856,6 +4865,7 @@ async function _issueStudentCertificate(lessonKey, studentName, courseName){
       valid:true
     });
     b.set(idxRef,{ certNum, studentId:tid, lessonKey });
+    b.set(db.collection('verifica').doc(certNum), _publicCertData(certNum, studentName, courseName));
     await b.commit();
     return certNum;
   }catch(e){
@@ -4863,6 +4873,25 @@ async function _issueStudentCertificate(lessonKey, studentName, courseName){
     showToast('Non è stato possibile registrare l\'attestato per la verifica online. Riprova tra poco o scrivi alla segreteria.','error');
     return null;
   }
+}
+
+// Scheda PUBBLICA di verifica: solo iniziali, corso, data, validità (niente nome completo né CF)
+function _certInitials(fullName){
+  return String(fullName||'').trim().split(/\s+/).filter(Boolean).map(p=>p[0].toUpperCase()+'.').join(' ');
+}
+function _publicCertData(certNum, studentName, courseName, issuedAtISO, valid){
+  return { certNum, initials:_certInitials(studentName), courseName:courseName||'', issuedAtISO:issuedAtISO||new Date().toISOString(), valid: valid!==false };
+}
+// ADMIN: crea le schede pubbliche mancanti per gli attestati già emessi
+async function _backfillPublicCerts(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  try{
+    const [cs,vs]=await Promise.all([db.collection('certificates').get(), db.collection('verifica').get()]);
+    const have=new Set(vs.docs.map(d=>d.id));
+    const ops=[];
+    cs.forEach(d=>{ if(!have.has(d.id)){ const c=d.data(); ops.push(db.collection('verifica').doc(d.id).set(_publicCertData(d.id,c.studentName,c.courseName,c.issuedAtISO,c.valid))); } });
+    if(ops.length){ await Promise.allSettled(ops); console.log('[SFV] schede verifica create:',ops.length); }
+  }catch(e){ console.warn('[SFV] backfill verifica',e); }
 }
 
 async function _registerCertificate(certNum, studentId, studentName, courseName){
@@ -4873,6 +4902,7 @@ async function _registerCertificate(certNum, studentId, studentName, courseName)
       issuedAt: firebase.firestore.FieldValue.serverTimestamp(),
       valid: true
     });
+    await db.collection('verifica').doc(certNum).set(_publicCertData(certNum, studentName, courseName));
   }catch(e){ console.warn('cert register error',e); }
 }
 
@@ -4917,6 +4947,12 @@ async function toggleCertValid(certNum, makeValid){
       valid: !!makeValid,
       revokedAtISO: makeValid ? null : new Date().toISOString()
     });
+    try{
+      await db.collection('verifica').doc(certNum).update({ valid: !!makeValid });
+    }catch(_){
+      const c=(await db.collection('certificates').doc(certNum).get()).data()||{};
+      await db.collection('verifica').doc(certNum).set(_publicCertData(certNum,c.studentName,c.courseName,c.issuedAtISO,!!makeValid));
+    }
     showToast(makeValid?'Attestato riattivato':'Attestato revocato','success');
     loadIssuedCertificates();
   }catch(e){ showToast('Operazione non riuscita: '+(e.code||e.message),'error'); }
@@ -7328,7 +7364,8 @@ function openAdminChatThread(studentId, studentName){
   const header=document.getElementById('admin-chat-header');
   const u=USERS.find(x=>x.tableId===studentId);
   const email=u?` — ${u.email}`:'';
-  if(header) header.innerHTML=`<div class="av" style="background:var(--green-100);color:var(--green-700);width:28px;height:28px;font-size:11px;flex-shrink:0">${studentName.slice(0,2).toUpperCase()}</div><span>${studentName}${email}</span>`;
+  if(header) header.innerHTML=`<div class="av" style="background:var(--green-100);color:var(--green-700);width:28px;height:28px;font-size:11px;flex-shrink:0">${studentName.slice(0,2).toUpperCase()}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${studentName}${email}</span>
+    <button class="btn btn-xs" style="flex-shrink:0;color:var(--red-700)" title="Elimina tutti i messaggi di questa conversazione (es. a fine corso)" onclick="deletePrivateChat(this.dataset.sid, this.dataset.sn)" data-sid="${_esc(studentId)}" data-sn="${_esc(studentName)}"><i class="ti ti-trash"></i> Elimina conversazione</button>`;
 
   const inputBar=document.getElementById('admin-chat-input-bar');
   if(inputBar) inputBar.style.display='flex';
@@ -7707,11 +7744,38 @@ async function createGroupChat(){
 
 async function deleteGroupChat(courseId){
   const c=CORSI.find(x=>x.id===courseId);
-  if(!confirm(`Eliminare il gruppo "${c?.name||courseId}"?\nI messaggi verranno conservati.`)) return;
+  if(!confirm(`Chiudere il gruppo "${c?.name||courseId}"?`)) return;
+  const wipe=confirm(`Eliminare anche TUTTI i messaggi del gruppo?\n\nOK = elimina i messaggi (consigliato a fine corso, come previsto dall'informativa privacy)\nAnnulla = chiudi il gruppo ma conserva i messaggi`);
   try{
     await db.collection('group_chats').doc(courseId).update({active:false});
-    showToast('Gruppo disattivato','success'); loadAdminGroups();
+    let n=0;
+    if(wipe) n=await _deleteAllDocs(db.collection('group_chats').doc(courseId).collection('messages'));
+    showToast(wipe?`Gruppo chiuso — ${n} messaggi eliminati`:'Gruppo disattivato','success'); loadAdminGroups();
   }catch(e){ showToast('Errore: '+e.message,'error'); }
+}
+
+// Cancella tutti i documenti di una raccolta (a blocchi da 400)
+async function _deleteAllDocs(colRef){
+  let total=0;
+  while(true){
+    const snap=await colRef.limit(400).get();
+    if(snap.empty) break;
+    const b=db.batch(); snap.forEach(d=>b.delete(d.ref)); await b.commit();
+    total+=snap.size;
+    if(snap.size<400) break;
+  }
+  return total;
+}
+
+// ADMIN — elimina la conversazione privata con uno studente (es. a fine corso)
+async function deletePrivateChat(studentId, studentName){
+  if(!currentUser||currentUser.role!=='admin'||!studentId) return;
+  if(!confirm(`Eliminare TUTTI i messaggi della conversazione con ${studentName||studentId}?\nL'operazione non si può annullare.`)) return;
+  try{
+    const n=await _deleteAllDocs(_chatCol(studentId));
+    try{ await db.collection('private_chats').doc(studentId).delete(); }catch(_){}
+    showToast(`Conversazione eliminata (${n} messaggi)`,'success');
+  }catch(e){ showToast('Errore: '+(e.code||e.message),'error'); }
 }
 
 async function _watchGroupUnreadBadge(){
@@ -8636,7 +8700,7 @@ async function verificaAttestato(){
   if(!num){showToast('Inserisci il numero attestato','warning');return;}
   if(result) result.style.display='none';
   try{
-    const snap=await db.collection('certificates').doc(num).get();
+    const snap=await db.collection('verifica').doc(num).get();
     if(!snap.exists){
       result.style.cssText='display:block;padding:16px;background:var(--red-100);border:1px solid var(--red-200);border-radius:var(--radius-lg)';
       result.innerHTML=`<div style="display:flex;align-items:center;gap:10px">
@@ -8661,9 +8725,7 @@ async function verificaAttestato(){
       return;
     }
     // Attestato valido — mostra iniziali (non nome completo per privacy)
-    const fullName=d.studentName||'';
-    const parts=fullName.trim().split(' ');
-    const initials=parts.map(p=>p[0]?.toUpperCase()+'.'||'').join(' ');
+    const initials=d.initials||'—';
     const dataRilascio=d.issuedAtISO?new Date(d.issuedAtISO).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}):'—';
 
     result.style.cssText='display:block;padding:16px;background:var(--green-100);border:1.5px solid var(--green-300);border-radius:var(--radius-lg)';
@@ -8993,7 +9055,7 @@ function renderStepAnagrafica(body){
     <div id="reg-ana-error" class="field-error" style="display:none"><i class="ti ti-alert-circle"></i> Compila i campi obbligatori.</div>
     <div style="margin-top:14px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-md);border:1px solid var(--border-light);font-size:11px;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px">
       <i class="ti ti-shield-lock" style="font-size:13px;margin-top:1px;flex-shrink:0;color:var(--green-600)"></i>
-      <span>I tuoi dati sono trattati da Rudy Collodet ai sensi del GDPR esclusivamente per la gestione dell'iscrizione ai corsi. Leggi la <a href="https://www.scuolafaunisticavenatoria.it/privacy-policy" target="_blank" rel="noopener" style="color:var(--green-600);text-decoration:underline">Privacy Policy</a> per maggiori informazioni.</span>
+      <span>I tuoi dati sono trattati da Rudy Collodet ai sensi del GDPR esclusivamente per la gestione dell'iscrizione ai corsi. Leggi la <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--green-600);text-decoration:underline">Privacy Policy</a> per maggiori informazioni.</span>
     </div>`;
 }
 
@@ -9652,6 +9714,7 @@ function faShowOverlay(user){
       </button>
       <div style="font-size:12px;color:#5C6450;margin-top:18px;padding-top:18px;border-top:1px solid #EAE7DA">
         Account: <strong id="fa-email-display">${user.email}</strong>
+        <div style="margin-top:8px;font-size:11px">Proseguendo confermi di aver letto l'<a href="privacy.html" target="_blank" rel="noopener" style="color:#2d5a3d">informativa privacy</a>.</div>
       </div>
     </div>`;
   document.body.appendChild(overlay);
