@@ -1410,6 +1410,46 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 
         <!-- Backup automatico — SOLO ADMIN -->
         <div id="backup-section" style="max-width:520px;margin-top:24px;display:none">
+          <!-- Copia COMPLETA fuori da Firebase (cartella di Google Drive sul PC) -->
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="width:38px;height:38px;background:var(--green-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-brand-google-drive" style="font-size:18px;color:var(--green-700)"></i>
+            </div>
+            <div>
+              <div style="font-family:var(--font-display);font-size:15px;font-weight:600">Copia completa su Google Drive</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Tutti i dati della piattaforma e del Database, salvati fuori da Firebase</div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:22px;box-shadow:var(--shadow-sm);margin-bottom:28px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+              <div style="background:var(--surface2);border-radius:var(--radius-lg);padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Ultima copia</div>
+                <div style="font-size:13px;font-weight:600" id="drivebk-last">—</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px" id="drivebk-last-info"></div>
+              </div>
+              <div style="background:var(--surface2);border-radius:var(--radius-lg);padding:12px 14px">
+                <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Cartella su questo PC</div>
+                <div style="font-size:13px;font-weight:600;word-break:break-word" id="drivebk-folder">Non scelta</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Scegli una cartella dentro Google Drive</div>
+              </div>
+            </div>
+            <div id="drivebk-msg" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:var(--radius-md);font-size:13px;align-items:center;gap:8px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" id="drivebk-run-btn" onclick="runDriveBackup(true)" style="background:var(--green-700);border-color:var(--green-700)">
+                <i class="ti ti-cloud-upload"></i> Salva copia ora
+              </button>
+              <button class="btn" id="drivebk-folder-btn" onclick="chooseDriveBackupFolder()">
+                <i class="ti ti-folder"></i> Scegli cartella
+              </button>
+            </div>
+            <div style="margin-top:12px;font-size:11px;color:var(--text-muted);line-height:1.55">
+              <i class="ti ti-info-circle" style="font-size:12px"></i>
+              Contiene: studenti, corsi assegnati, contenuti, avanzamenti, ore guardate, attestati, chat, richieste, registro accessi e clienti del Database.
+              Si salva <b>da sola una volta alla settimana</b> quando entri come admin da questo PC; le copie più vecchie oltre le ultime 20 vengono eliminate.
+              Su un browser che non permette di scegliere la cartella (es. telefono) il file viene scaricato normalmente.
+            </div>
+          </div>
+
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
             <div style="width:38px;height:38px;background:var(--blue-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0">
               <i class="ti ti-database-export" style="font-size:18px;color:var(--blue-700)"></i>
@@ -1451,7 +1491,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
             </div>
             <div style="margin-top:12px;font-size:11px;color:var(--text-muted)">
               <i class="ti ti-info-circle" style="font-size:12px"></i>
-              Il backup salva: utenti, corsi assegnati, scadenze, richieste e contenuti corsi. Il backup precedente viene sovrascritto.
+              Questo backup rapido resta dentro Firebase (utenti, corsi assegnati, scadenze, richieste, contenuti) e serve per ripristini veloci. La copia completa e sicura è quella su Google Drive, qui sopra.
             </div>
           </div>
         </div>
@@ -2572,6 +2612,7 @@ function _finishBoot(timedOut){
   loadCertificateConfig();
   // Backup automatico: controlla se serve eseguirlo (giornaliero o settimanale)
   setTimeout(()=>checkAndRunAutoBackup(), 3000);
+        setTimeout(()=>checkDriveBackupDue(), 9000);
   const loader=document.getElementById('fb-loading');
   const login=document.getElementById('login-screen');
   if(loader) loader.style.display='none';
@@ -2661,6 +2702,7 @@ async function _checkAdminToken(){
     loadCertificateConfig();
     _backfillInvites(); // crea gli inviti per gli studenti (necessari al primo accesso)
     setTimeout(()=>checkAndRunAutoBackup(), 3000);
+        setTimeout(()=>checkDriveBackupDue(), 9000);
     applyRole('admin');
     setTimeout(()=>_purgeExpiredTokens(), 2000); // pulizia token in background
     showToast('🔑 Accesso admin dal database — benvenuto!', 4000);
@@ -2948,6 +2990,7 @@ async function doLogin(){
         _backfillInvites(); // assicura un "invito" per ogni studente già esistente
         _syncContenuti();   // crea/aggiorna i contenuti separati per corso
         setTimeout(()=>checkAndRunAutoBackup(), 3000);
+        setTimeout(()=>checkDriveBackupDue(), 9000);
       }catch(e){ console.error('Admin data load error:',e); }
       applyRole('admin');
       setTimeout(()=>_purgeExpiredTokens(), 2000);
@@ -5628,6 +5671,7 @@ function populateSettingsView(){
     populateEmailJSFields();
     populateCertificateFields();
     loadBackupStatus();
+    loadDriveBackupStatus();
     // Popola select studenti per reset password admin
     const sel=document.getElementById('student-pwd-select');
     if(sel){
@@ -8336,6 +8380,220 @@ async function downloadBackup(type){
   }finally{
     if(btn){btn.disabled=false;btn.innerHTML=`<i class="ti ti-download"></i> Scarica ${type==='daily'?'giornaliero':'settimanale'}`;}
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COPIA COMPLETA SU GOOGLE DRIVE (fuori da Firebase)
+   ─────────────────────────────────────────────────────────────
+   Legge TUTTI i dati da Firestore e li salva in un file JSON in una
+   cartella scelta sul PC (dentro Google Drive per Desktop → si
+   sincronizza da sola su Drive). Una volta a settimana in automatico
+   all'accesso admin; in qualsiasi momento con "Salva copia ora".
+═══════════════════════════════════════════════════════════════ */
+const DRIVEBK_DAYS = 7;          // ogni quanti giorni la copia automatica
+const DRIVEBK_KEEP = 20;         // quante copie tenere nella cartella
+const DRIVEBK_PREFIX = 'SFV_copia_completa_';
+
+// IndexedDB minimale per ricordare la cartella scelta su questo PC
+function _bkIdb(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('sfv-backup',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function _bkGet(k){ try{ const d=await _bkIdb(); return await new Promise(r=>{ const q=d.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>r(q.result); q.onerror=()=>r(null); }); }catch(_){ return null; } }
+async function _bkSet(k,v){ try{ const d=await _bkIdb(); await new Promise(r=>{ const t=d.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=r; t.onerror=r; }); }catch(_){} }
+
+function _driveBkMsg(msg,type='info'){
+  const el=document.getElementById('drivebk-msg'); if(!el) return;
+  const colors={success:'background:var(--green-100);border:1px solid var(--green-200);color:var(--green-700)',
+    error:'background:var(--red-100);border:1px solid var(--red-200);color:var(--red-700)',
+    info:'background:var(--blue-100);border:1px solid var(--blue-200);color:var(--blue-700)'};
+  el.style.cssText=`display:flex;margin-bottom:14px;padding:10px 14px;border-radius:var(--radius-md);font-size:13px;align-items:center;gap:8px;${colors[type]||colors.info}`;
+  el.innerHTML=msg;
+  if(type==='success') setTimeout(()=>{ el.style.display='none'; }, 8000);
+}
+
+async function chooseDriveBackupFolder(){
+  if(!window.showDirectoryPicker){
+    _driveBkMsg('Questo browser non permette di scegliere una cartella: la copia verrà scaricata come file. Usa Chrome o Edge sul computer per salvarla direttamente in Google Drive.','info');
+    return null;
+  }
+  try{
+    const dir=await window.showDirectoryPicker({ id:'sfv-backup', mode:'readwrite', startIn:'documents' });
+    await _bkSet('dir', dir);
+    const el=document.getElementById('drivebk-folder'); if(el) el.textContent=dir.name;
+    _driveBkMsg(`Cartella scelta: <b>${_esc(dir.name)}</b>. Le copie verranno salvate qui.`,'success');
+    return dir;
+  }catch(e){ return null; } // annullato
+}
+
+async function _readAllForBackup(progress){
+  const out={ version:3, exportedAt:new Date().toISOString(), exportedBy:'admin', collections:{} };
+  const put=(col,id,data)=>{ (out.collections[col]=out.collections[col]||{})[id]=data; };
+  const plain=v=>JSON.parse(JSON.stringify(v,(k,x)=> (x&&typeof x.toDate==='function') ? x.toDate().toISOString() : x));
+  const simple=['users','accessi','invites','uidToTable','progress','watch_time','certificates','certIndex','config','clienti','device_auth'];
+  for(const col of simple){
+    progress&&progress(col);
+    try{ const snap=await db.collection(col).get(); snap.forEach(d=>put(col,d.id,plain(d.data()))); }
+    catch(e){ out.collections[col+'__errore']=String(e.code||e.message); }
+  }
+  // contenuti + specializzazioni
+  progress&&progress('contenuti');
+  try{
+    const cs=await db.collection('contenuti').get();
+    for(const d of cs.docs){
+      put('contenuti',d.id,plain(d.data()));
+      const sp=await d.ref.collection('spec').get();
+      sp.forEach(x=>put('contenuti_spec',d.id+'/'+x.id,plain(x.data())));
+    }
+  }catch(e){ out.collections['contenuti__errore']=String(e.code||e.message); }
+  // chat private e di gruppo con i messaggi
+  for(const col of ['private_chats','group_chats']){
+    progress&&progress(col);
+    try{
+      const cs=await db.collection(col).get();
+      const ids=new Set(cs.docs.map(d=>d.id));
+      cs.forEach(d=>put(col,d.id,plain(d.data())));
+      if(col==='private_chats') (USERS||[]).forEach(u=>{ if(u.tableId) ids.add(u.tableId); });
+      for(const id of ids){
+        const ms=await db.collection(col).doc(id).collection('messages').get();
+        ms.forEach(m=>put(col+'_messages',id+'/'+m.id,plain(m.data())));
+      }
+    }catch(e){ out.collections[col+'__errore']=String(e.code||e.message); }
+  }
+  // registro accessi (per studente)
+  progress&&progress('registro accessi');
+  try{
+    for(const u of (USERS||[])){
+      if(!u.tableId) continue;
+      const es=await db.collection('log').doc(u.tableId).collection('entries').get();
+      es.forEach(e=>put('log_entries',u.tableId+'/'+e.id,plain(e.data())));
+    }
+  }catch(e){ out.collections['log__errore']=String(e.code||e.message); }
+  out.counts=Object.fromEntries(Object.entries(out.collections).filter(([k])=>!k.endsWith('__errore')).map(([k,v])=>[k,Object.keys(v).length]));
+  return out;
+}
+
+async function _writeToFolder(dir, name, blob){
+  const fh=await dir.getFileHandle(name,{create:true});
+  const w=await fh.createWritable(); await w.write(blob); await w.close();
+  // tieni solo le ultime DRIVEBK_KEEP copie
+  try{
+    const names=[];
+    for await (const [n,h] of dir.entries()){ if(h.kind==='file' && n.startsWith(DRIVEBK_PREFIX) && n.endsWith('.json')) names.push(n); }
+    names.sort(); // il nome contiene data e ora → ordine cronologico
+    const extra=names.length-DRIVEBK_KEEP;
+    for(let i=0;i<extra;i++){ try{ await dir.removeEntry(names[i]); }catch(_){} }
+  }catch(_){}
+}
+
+let _driveBkRunning=false;
+async function runDriveBackup(manual){
+  if(!currentUser||currentUser.role!=='admin'||_driveBkRunning) return;
+  _driveBkRunning=true;
+  const btn=document.getElementById('drivebk-run-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Copia in corso…'; }
+  try{
+    // 1) cartella (chiede il permesso solo se serve: dentro un clic va bene)
+    let dir=null;
+    if(!window.showDirectoryPicker && !manual){ _showDriveBkBanner(); return; } // niente download a sorpresa
+    if(window.showDirectoryPicker){
+      dir=await _bkGet('dir');
+      if(dir){
+        let perm=await dir.queryPermission({mode:'readwrite'});
+        if(perm!=='granted' && manual) perm=await dir.requestPermission({mode:'readwrite'});
+        if(perm!=='granted'){
+          if(!manual){ _showDriveBkBanner(); return; }
+          dir=null;
+        }
+      } else if(manual){
+        dir=await chooseDriveBackupFolder();
+        if(!dir){ return; }
+      } else { _showDriveBkBanner(); return; }
+    }
+    // 2) lettura completa
+    if(manual) _driveBkMsg('<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Lettura dei dati…','info');
+    const data=await _readAllForBackup(col=>{ if(manual) _driveBkMsg(`<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Lettura: ${_esc(col)}…`,'info'); });
+    const json=JSON.stringify(data,null,1);
+    const blob=new Blob([json],{type:'application/json'});
+    const now=new Date();
+    const p2=n=>String(n).padStart(2,'0');
+    const stamp=`${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())}_${p2(now.getHours())}-${p2(now.getMinutes())}`; // ora italiana
+    const name=`${DRIVEBK_PREFIX}${stamp}.json`;
+    const sizeKB=Math.round(blob.size/1024);
+    // 3) scrittura
+    if(dir){ await _writeToFolder(dir,name,blob); }
+    else{
+      const url=URL.createObjectURL(blob); const a=document.createElement('a');
+      a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+    }
+    // 4) registra la data (visibile da tutti i PC admin)
+    const info={ lastISO:now.toISOString(), file:name, sizeKB, folder:dir?dir.name:'(download)', counts:data.counts||{} };
+    try{ await db.collection('config').doc('driveBackup').set(info); }catch(_){}
+    await _bkSet('lastISO', info.lastISO);
+    _renderDriveBkStatus(info);
+    _hideDriveBkBanner();
+    const nStud=(data.counts&&data.counts.users)||0, nCli=(data.counts&&data.counts.clienti)||0;
+    const where=dir?`nella cartella <b>${_esc(dir.name)}</b>`:'nei Download (spostalo in Google Drive)';
+    if(manual) _driveBkMsg(`<i class="ti ti-circle-check"></i> Copia salvata ${where}: ${sizeKB} KB — ${nStud} studenti, ${nCli} clienti.`,'success');
+    showToast('Copia completa salvata'+(dir?' su Drive':''),'success');
+  }catch(e){
+    console.error('[SFV] copia completa',e);
+    if(manual) _driveBkMsg('Copia non riuscita: '+_esc(e.message||String(e)),'error');
+    else _showDriveBkBanner();
+  }finally{
+    _driveBkRunning=false;
+    if(btn){ btn.disabled=false; btn.innerHTML='<i class="ti ti-cloud-upload"></i> Salva copia ora'; }
+  }
+}
+
+function _renderDriveBkStatus(info){
+  const l=document.getElementById('drivebk-last'), li=document.getElementById('drivebk-last-info');
+  if(!l) return;
+  if(info&&info.lastISO){
+    const d=new Date(info.lastISO);
+    const days=Math.floor((Date.now()-d.getTime())/86400000);
+    l.textContent=d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    l.style.color = days>DRIVEBK_DAYS ? 'var(--red-700)' : '';
+    if(li) li.textContent=(info.sizeKB?info.sizeKB+' KB · ':'')+(days===0?'oggi':days===1?'ieri':days+' giorni fa');
+  } else { l.textContent='Mai'; l.style.color='var(--red-700)'; if(li) li.textContent=''; }
+}
+async function loadDriveBackupStatus(){
+  let info=null;
+  try{ const s=await db.collection('config').doc('driveBackup').get(); if(s.exists) info=s.data(); }catch(_){}
+  _renderDriveBkStatus(info);
+  const dir=await _bkGet('dir'); const el=document.getElementById('drivebk-folder');
+  if(el) el.textContent = dir ? dir.name : (window.showDirectoryPicker ? 'Non scelta' : 'Download (browser senza scelta cartella)');
+  return info;
+}
+
+// Banner in alto se la copia è da fare e serve un clic (permesso cartella)
+function _showDriveBkBanner(){
+  if(document.getElementById('drivebk-banner')) return;
+  const b=document.createElement('div');
+  b.id='drivebk-banner';
+  b.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:300;background:#2E2418;color:#f3e6c4;border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px);font-size:13px;flex-wrap:wrap';
+  b.innerHTML=`<i class="ti ti-brand-google-drive" style="font-size:20px;color:#D9B65C"></i>
+    <span style="flex:1;min-width:180px">È ora di salvare la <b>copia completa</b> dei dati su Google Drive.</span>
+    <button id="drivebk-banner-go" style="background:#D9B65C;color:#2E2418;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;font-family:inherit">Salva ora</button>
+    <button id="drivebk-banner-x" title="Più tardi" style="background:none;border:none;color:#f3e6c4;font-size:18px;cursor:pointer">✕</button>`;
+  document.body.appendChild(b);
+  b.querySelector('#drivebk-banner-go').onclick=()=>runDriveBackup(true);
+  b.querySelector('#drivebk-banner-x').onclick=_hideDriveBkBanner;
+}
+function _hideDriveBkBanner(){ const b=document.getElementById('drivebk-banner'); if(b) b.remove(); }
+
+async function checkDriveBackupDue(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  let lastISO=null;
+  try{ const s=await db.collection('config').doc('driveBackup').get(); if(s.exists) lastISO=s.data().lastISO; }catch(_){}
+  const due = !lastISO || (Date.now()-new Date(lastISO).getTime()) > DRIVEBK_DAYS*86400000;
+  if(!due) return;
+  // Prova in silenzio (se il permesso sulla cartella è già concesso), altrimenti banner
+  await runDriveBackup(false);
 }
 
 // ── Check automatico al caricamento (solo admin) ─────────────
