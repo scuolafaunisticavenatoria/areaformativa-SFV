@@ -1248,7 +1248,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
             </div>
             <div>
               <div style="font-size:15px;font-weight:700">Reset password studente</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Imposta una nuova password per un utente registrato</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Invia allo studente l'email per scegliere una nuova password</div>
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-xl);padding:22px;box-shadow:var(--shadow-sm)">
@@ -1266,25 +1266,15 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
               </select>
             </div>
 
-            <div class="reg-field">
-              <label class="reg-label">Nuova password</label>
-              <div style="position:relative">
-                <input class="reg-input" type="password" id="student-pwd-new" placeholder="Min. 8 caratteri (lettere + numeri)" autocomplete="new-password">
-                <button type="button" onclick="togglePwd('student-pwd-new',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px"><i class="ti ti-eye" style="font-size:16px"></i></button>
-              </div>
-            </div>
-
-            <div class="reg-field" style="margin-bottom:0">
-              <label class="reg-label">Conferma password</label>
-              <div style="position:relative">
-                <input class="reg-input" type="password" id="student-pwd-confirm" placeholder="Ripeti la nuova password" autocomplete="new-password">
-                <button type="button" onclick="togglePwd('student-pwd-confirm',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px"><i class="ti ti-eye" style="font-size:16px"></i></button>
-              </div>
+            <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.55;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius-md);padding:11px 13px">
+              <i class="ti ti-mail" style="color:var(--blue-700)"></i>
+              Per sicurezza la password la sceglie sempre lo studente: gli arriva un'<strong>email ufficiale</strong> con il link per impostarne una nuova (controllate anche lo spam).
+              Se non ha ancora fatto il primo accesso non serve: al primo login sceglie lui la password.
             </div>
 
             <div style="margin-top:20px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" style="background:var(--blue-700);border-color:var(--blue-700)" onclick="changeStudentPassword()">
-                <i class="ti ti-lock-check"></i> Reimposta password
+              <button class="btn btn-primary" id="student-pwd-btn" style="background:var(--blue-700);border-color:var(--blue-700)" onclick="changeStudentPassword()">
+                <i class="ti ti-mail-forward"></i> Invia email per reimpostare la password
               </button>
             </div>
           </div>
@@ -2212,6 +2202,7 @@ let _fbApp, db;
     _fbApp = firebase.app();
     db     = firebase.firestore();
   }
+  try{ if(firebase.auth) firebase.auth().languageCode='it'; }catch(_){}  // email di Firebase in italiano
 })();
 
 let _dbReady = false;
@@ -2300,7 +2291,7 @@ async function _syncContenuti(){
   if(!currentUser||currentUser.role!=='admin') return;
   const ops=[];
   CORSI.forEach(c=>{
-    const base={ lessons:c.lessons||[] };
+    const base={ name:c.name, lessons:c.lessons||[] };
     const kb='c/'+c.id, jb=JSON.stringify(base);
     if(_contenutiCache[kb]!==jb){
       ops.push(db.collection('contenuti').doc(c.id).set(base).then(()=>{_contenutiCache[kb]=jb;}));
@@ -4798,6 +4789,39 @@ async function _getNextCertNumber(){
   return `SFV-${new Date().getFullYear()}-${String(num).padStart(4,'0')}`;
 }
 
+/* Attestato emesso dallo studente: numero progressivo + registrazione pubblica.
+   Le regole Firestore accettano la registrazione SOLO se: il corso è assegnato,
+   il nome coincide con la scheda, il nome del corso è quello vero e lo studente
+   ha completato almeno l'80% delle lezioni. Un attestato per corso/specializzazione. */
+async function _issueStudentCertificate(lessonKey, studentName, courseName){
+  const tid=currentUser.tableId;
+  const [cid,...rest]=String(lessonKey).split('__');
+  const spec=rest.join('__')||'';
+  const idxRef=db.collection('certIndex').doc(tid+'__'+lessonKey);
+  try{
+    const ex=await idxRef.get();
+    if(ex.exists && ex.data().certNum) return ex.data().certNum;   // già rilasciato: stesso numero
+  }catch(_){}
+  try{ await saveProgressToStorage(tid); }catch(_){}
+  const certNum=await _getNextCertNumber();
+  try{
+    const b=db.batch();
+    b.set(db.collection('certificates').doc(certNum),{
+      certNum, studentId:tid, studentName, courseName, courseId:cid, spec, lessonKey,
+      issuedAtISO:new Date().toISOString(),
+      issuedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      valid:true
+    });
+    b.set(idxRef,{ certNum, studentId:tid, lessonKey });
+    await b.commit();
+    return certNum;
+  }catch(e){
+    console.warn('[SFV] registrazione attestato non riuscita',e);
+    showToast('Non è stato possibile registrare l\'attestato per la verifica online. Riprova tra poco o scrivi alla segreteria.','error');
+    return null;
+  }
+}
+
 async function _registerCertificate(certNum, studentId, studentName, courseName){
   try{
     await db.collection('certificates').doc(certNum).set({
@@ -4825,17 +4849,34 @@ async function loadIssuedCertificates(){
     box.innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 2px 8px">${rows.length} attestat${rows.length===1?'o':'i'} emess${rows.length===1?'o':'i'}</div>`+
       rows.map(r=>{
         const dt=r.issuedAtISO?new Date(r.issuedAtISO).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}):'';
-        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border-light);border-radius:var(--radius-md);margin-bottom:6px;background:var(--surface)">
-          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--gold-700);flex-shrink:0">${_esc(r.certNum||'')}</span>
+        const revoked = r.valid===false;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid ${revoked?'var(--red-200)':'var(--border-light)'};border-radius:var(--radius-md);margin-bottom:6px;background:${revoked?'var(--red-100)':'var(--surface)'}">
+          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:${revoked?'var(--red-700)':'var(--gold-700)'};flex-shrink:0;${revoked?'text-decoration:line-through':''}">${_esc(r.certNum||'')}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.studentName||'')}</div>
             <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(r.courseName||'')}</div>
           </div>
-          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0">${dt}</span>
+          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0">${dt}${revoked?' · <b style="color:var(--red-700)">REVOCATO</b>':''}</span>
+          <button class="btn btn-xs" style="flex-shrink:0;${revoked?'':'color:var(--red-700)'}" title="${revoked?'Riattiva attestato':'Revoca attestato (la verifica online lo segnalerà come non valido)'}" onclick="toggleCertValid(this.dataset.num, ${revoked?'true':'false'})" data-num="${_esc(r.certNum||'')}"><i class="ti ${revoked?'ti-rotate-clockwise':'ti-ban'}"></i></button>
           <button class="btn btn-xs" style="flex-shrink:0" title="Riscarica" onclick="downloadCertificate(this.dataset.sn,this.dataset.cn,this.dataset.id,this.dataset.num)" data-sn="${_esc(r.studentName||'')}" data-cn="${_esc(r.courseName||'')}" data-id="${_esc(r.studentId||'')}" data-num="${_esc(r.certNum||'')}"><i class="ti ti-download"></i></button>
         </div>`;
       }).join('');
   }catch(e){ box.innerHTML='<div style="font-size:12px;color:var(--red-700);padding:10px">Errore nel caricamento degli attestati.</div>'; }
+}
+
+// ADMIN — revoca / riattiva un attestato (la verifica pubblica lo mostra come non valido)
+async function toggleCertValid(certNum, makeValid){
+  if(!currentUser||currentUser.role!=='admin'||!certNum) return;
+  const msg = makeValid ? `Riattivare l'attestato ${certNum}?` : `Revocare l'attestato ${certNum}?\nChi lo verifica online lo vedrà come NON VALIDO.`;
+  if(!confirm(msg)) return;
+  try{
+    await db.collection('certificates').doc(certNum).update({
+      valid: !!makeValid,
+      revokedAtISO: makeValid ? null : new Date().toISOString()
+    });
+    showToast(makeValid?'Attestato riattivato':'Attestato revocato','success');
+    loadIssuedCertificates();
+  }catch(e){ showToast('Operazione non riuscita: '+(e.code||e.message),'error'); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -4975,14 +5016,22 @@ function _drawSignature(doc,x,y,s){
   ], x, y, [s,s], 'S');
 }
 
-async function downloadCertificate(studentName, courseName, studentId, existingCertNum){
+async function downloadCertificate(studentName, courseName, studentId, existingCertNum, lessonKey){
   try{
     if(!window.jspdf||!window.jspdf.jsPDF){
       showToast('Libreria PDF non disponibile. Riprova.','error'); return;
     }
     const sid = studentId || currentUser?.tableId || 'unknown';
-    const certNum = existingCertNum || await _getNextCertNumber();
-    if(!existingCertNum) await _registerCertificate(certNum, sid, studentName, courseName);
+    let certNum = existingCertNum;
+    if(!certNum && currentUser && currentUser.role!=='admin' && lessonKey){
+      // Studente: l'attestato viene REGISTRATO (verificabile online) prima di essere creato.
+      // Se lo ha già ottenuto, si riusa lo stesso numero.
+      certNum = await _issueStudentCertificate(lessonKey, studentName, courseName);
+      if(!certNum) return;
+    } else if(!certNum){
+      certNum = await _getNextCertNumber();
+      await _registerCertificate(certNum, sid, studentName, courseName);
+    }
 
     // Dati completi dello studente
     const u = USERS.find(x=>x.tableId===sid) || currentUser || {};
@@ -5003,7 +5052,7 @@ async function downloadCertificate(studentName, courseName, studentId, existingC
       'c01':40,'c02':32,'c03':32,'c04':10,'c05':35,
       'c06':32,'c07':32,'c08':84,'c09':84,'c10':9
     };
-    const cid = CORSI.find(c=>c.name===courseName)?.id||'';
+    const cid = (lessonKey ? String(lessonKey).split('__')[0] : '') || CORSI.find(c=>c.name===courseName)?.id || CORSI.find(c=>String(courseName||'').startsWith(c.name+' — '))?.id || '';
     if(['c10'].includes(cid)){ showToast('Questo corso non prevede il rilascio di un attestato.','info'); return; }
     const ore = courseOre[cid]||0;
 
@@ -5402,7 +5451,7 @@ function lessonCardsHtml(lessons, doneSet, lessonKey, label){
           <div style="font-size:11px;color:var(--green-700);margin-top:2px">Hai superato l'80% del corso: puoi scaricare il tuo attestato.</div>
         </div>
       </div>
-      <button class="btn btn-primary" style="background:var(--gold-700);border-color:var(--gold-700);gap:7px" onclick="downloadCertificate(this.dataset.sn, this.dataset.cn)" data-sn="${_studentFullName.replace(/"/g,'&quot;')}" data-cn="${label.replace(/"/g,'&quot;')}">
+      <button class="btn btn-primary" style="background:var(--gold-700);border-color:var(--gold-700);gap:7px" onclick="downloadCertificate(this.dataset.sn, this.dataset.cn, null, null, this.dataset.lk)" data-sn="${_studentFullName.replace(/"/g,'&quot;')}" data-cn="${label.replace(/"/g,'&quot;')}" data-lk="${String(lessonKey).replace(/"/g,'&quot;')}">
         <i class="ti ti-certificate"></i> Scarica Attestato PDF
       </button>
     </div>`
@@ -5676,34 +5725,40 @@ function changeStudentPassword(){
 }
 async function _changeStudentPasswordAsync(){
   const selEl=document.getElementById('student-pwd-select');
-  const newPwd=document.getElementById('student-pwd-new').value;
-  const confirm=document.getElementById('student-pwd-confirm').value;
   const errEl=document.getElementById('student-pwd-error');
   const errMsg=document.getElementById('student-pwd-error-msg');
   const okEl=document.getElementById('student-pwd-success');
   const okMsg=document.getElementById('student-pwd-success-msg');
-
-  const showErr=(msg)=>{errMsg.textContent=msg;errEl.style.display='flex';okEl.style.display='none';}
+  const btn=document.getElementById('student-pwd-btn');
+  const showErr=(msg)=>{errMsg.textContent=msg;errEl.style.display='flex';okEl.style.display='none';};
   errEl.style.display='none';okEl.style.display='none';
 
   const idx=selEl.value;
   if(idx===''){showErr('Seleziona uno studente.');return;}
-  if(!newPwd||!confirm){showErr('Compila i campi password.');return;}
-  const pwdErrors=validatePasswordStrength(newPwd);
-  if(pwdErrors.length){showErr('La password deve avere: '+pwdErrors.join(', ')+'.');return;}
-  if(newPwd!==confirm){showErr('Le password non coincidono.');return;}
-
   const user=USERS.filter(u=>u.role!=='admin')[parseInt(idx)];
   if(!user){showErr('Utente non trovato.');return;}
-  user.password='$sha256$'+await sha256(newPwd);
+  const email=String(user.email||'').trim().toLowerCase();
+  if(!email||!email.includes('@')){showErr('Questo studente non ha un indirizzo email valido nella scheda.');return;}
 
-  document.getElementById('student-pwd-new').value='';
-  document.getElementById('student-pwd-confirm').value='';
-  selEl.value='';
-  okMsg.textContent=`Password di ${user.nome} ${user.cognome} aggiornata.`;
-  okEl.style.display='flex';
-  showToast(`Password di ${user.nome} ${user.cognome} reimpostata`,'success');
-  saveToStorage({user});
+  if(btn){btn.disabled=true;}
+  try{
+    // Il login usa Firebase Authentication: la password si cambia SOLO tramite
+    // il link ufficiale inviato da Firebase all'email dello studente.
+    firebase.auth().languageCode='it';
+    await firebase.auth().sendPasswordResetEmail(email);
+    okMsg.textContent=`Email inviata a ${email}: ${user.nome||''} ${user.cognome||''} riceverà il link per scegliere una nuova password.`;
+    okEl.style.display='flex';
+    selEl.value='';
+    showToast('Email di reimpostazione inviata','success');
+  }catch(e){
+    const c=(e&&e.code)||'';
+    if(c==='auth/user-not-found') showErr('Questo studente non ha ancora fatto il primo accesso: al primo login sceglierà lui la password.');
+    else if(c==='auth/invalid-email') showErr('L\'indirizzo email nella scheda dello studente non è valido.');
+    else if(c==='auth/too-many-requests') showErr('Troppe richieste ravvicinate. Riprova tra qualche minuto.');
+    else showErr('Invio non riuscito ('+(c||'errore')+'). Riprova.');
+  }finally{
+    if(btn){btn.disabled=false;}
+  }
 }
 
 // Cambio password autonomo dello studente loggato
