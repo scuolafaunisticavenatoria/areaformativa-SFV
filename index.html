@@ -5247,7 +5247,10 @@ function _pdfSafe(s){
 async function _certFromTemplate(tplKey, vals){
   const tpl=CERT_TEMPLATES[tplKey]; if(!tpl) return null;
   const PDFLib=await _loadPdfLib();
-  const resp=await fetch(tpl.file); if(!resp.ok) throw new Error('modello non trovato: '+tpl.file);
+  // il modello può stare nella cartella "attestati/" oppure accanto a index.html
+  let resp=await fetch(tpl.file);
+  if(!resp.ok){ resp=await fetch(tpl.file.split('/').pop()); }
+  if(!resp.ok) throw new Error('modello non trovato: '+tpl.file);
   const doc=await PDFLib.PDFDocument.load(await resp.arrayBuffer());
   const page=doc.getPages()[0];
   const FM={'Times-Roman':'TimesRoman','Times-Bold':'TimesRomanBold','Times-Italic':'TimesRomanItalic','Times-BoldItalic':'TimesRomanBoldItalic','Helvetica':'Helvetica','Helvetica-Bold':'HelveticaBold'};
