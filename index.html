@@ -5308,7 +5308,12 @@ async function downloadCertificate(studentName, courseName, studentId, existingC
           ? new Date(u.dataNascita).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})
           : u.dataNascita)
       : '';
-    const dateOggi  = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+    // Data di rilascio: quella registrata (se l'attestato esiste già), altrimenti oggi
+    let _issued=null;
+    if(certNum && certNum!=='ANTEPRIMA' && sid!=='preview'){
+      try{ const cs=await db.collection('certificates').doc(certNum).get(); if(cs.exists && cs.data().issuedAtISO) _issued=new Date(cs.data().issuedAtISO); }catch(_){}
+    }
+    const dateOggi  = (_issued && !isNaN(_issued) ? _issued : new Date()).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
 
     // Ore del corso
     const courseOre = {
