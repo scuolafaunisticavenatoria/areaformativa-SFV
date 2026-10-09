@@ -698,6 +698,89 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--radius-full)}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
 
+/* ═══════════════════ TELEFONI E TABLET ═══════════════════ */
+.tb-menu{display:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:20px;cursor:pointer;flex-shrink:0}
+.sb-backdrop{display:none}
+.bottom-nav{display:none}
+@media (max-width:860px){
+  html,body{overflow-x:hidden}
+  .shell{height:100vh;height:100dvh;min-height:0}
+  /* menu laterale a scomparsa */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,300px);z-index:400;transform:translateX(-105%);transition:transform .25s ease;box-shadow:12px 0 40px rgba(0,0,0,.35)}
+  body.sb-open .sidebar{transform:none}
+  .sb-backdrop{position:fixed;inset:0;background:rgba(10,20,6,.5);z-index:399;opacity:0;pointer-events:none;transition:opacity .25s;display:block}
+  body.sb-open .sb-backdrop{opacity:1;pointer-events:auto}
+  .tb-menu{display:inline-flex}
+  body.role-student .tb-menu{display:none}
+  /* barra superiore compatta */
+  .topbar{height:auto;min-height:56px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));gap:8px}
+  .topbar-title{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .topbar .btn-sm{padding:8px 10px;font-size:13px}
+  .topbar .btn-sm i{font-size:16px}
+  .tb-lbl{display:none}
+  /* contenuto a tutta larghezza */
+  .content{padding:16px 14px 24px}
+  body.role-student .content{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .content-head{margin-bottom:18px}
+  .content-title{font-size:23px}
+  .content-desc{font-size:13.5px}
+  .section-head h3{font-size:17px}
+  /* griglie a più colonne scritte nel codice → 2 colonne o 1 */
+  .content [style*="grid-template-columns:repeat(4"],
+  .content [style*="grid-template-columns:repeat(3"],
+  .content [style*="grid-template-columns: repeat(4"],
+  .content [style*="grid-template-columns: repeat(3"]{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .content [style*="max-width:520px"],.content [style*="max-width:560px"],.content [style*="max-width:600px"]{max-width:100%!important}
+  /* tabelle: scorrono in orizzontale invece di schiacciarsi */
+  .content table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  .content table td,.content table th{padding:10px 12px}
+  /* niente zoom automatico dell'iPhone sui campi */
+  input,select,textarea,.reg-input,.chat-input{font-size:16px!important}
+  /* corsi e lezioni */
+  .s-course-card{padding:14px;border-radius:16px}
+  .lesson-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .video-card--logo .video-card-title{font-size:11px}
+  /* chat a tutta altezza disponibile */
+  .chat-box{height:calc(100dvh - 330px);min-height:300px;border-radius:16px}
+  body.role-student .chat-box{height:calc(100dvh - 400px)}
+  .chat-bubble-wrap{max-width:86%}
+  .dash-nav-card{padding:14px 12px}
+  /* finestre */
+  .modal-bg{padding:10px;align-items:flex-end}
+  .modal{max-width:100%;width:100%;max-height:92dvh;border-radius:18px}
+  .modal-foot{flex-wrap:wrap}
+  .modal-foot .btn{flex:1;justify-content:center;min-height:42px}
+  .btn{min-height:36px}
+  /* barra di navigazione in basso (studenti) */
+  body.role-student .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:300;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(20,30,10,.08)}
+  .bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--text-muted);font-family:inherit;font-size:10.5px;font-weight:600;padding:6px 2px;border-radius:12px;position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .bottom-nav button i{font-size:22px;line-height:1}
+  .bottom-nav button.active{color:var(--green-700)}
+  .bottom-nav button.active i{background:var(--green-100);border-radius:999px;padding:3px 16px}
+  .bn-badge{display:none;position:absolute;top:2px;left:calc(50% + 8px);min-width:9px;height:9px;border-radius:99px;background:var(--red-600,#c62828);border:2px solid #fff}
+  .bn-badge.on{display:block}
+}
+.chat-back{display:none}
+@media (max-width:860px){
+  .bottom-nav{z-index:90!important}
+  /* chat admin: elenco conversazioni OPPURE conversazione */
+  #a-chat-panel-private{grid-template-columns:1fr!important;height:calc(100dvh - 255px)!important;min-height:340px}
+  #a-chat-panel-private > :nth-child(2){display:none!important}
+  #a-chat-panel-private.thread-open > :first-child{display:none!important}
+  #a-chat-panel-private.thread-open > :nth-child(2){display:flex!important}
+  #admin-chat-header{flex-wrap:wrap;padding:10px 12px!important}
+  #admin-chat-header .btn{font-size:11px}
+  .chat-back{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface);color:var(--text-primary);font-size:17px;cursor:pointer;flex-shrink:0}
+  /* linguette: scorrono invece di tagliarsi */
+  div:has(> .sd-tab){overflow-x:auto;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  div:has(> .sd-tab)::-webkit-scrollbar{display:none}
+  .sd-tab{flex-shrink:0;white-space:nowrap}
+}
+@media (max-width:420px){
+  .content [style*="grid-template-columns:1fr 1fr"],.content [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}
+  .topbar-title{font-size:17px}
+}
+
 /* ─── Utils ──────────────────────────────────────────── */
 .txt-secondary{color:var(--text-secondary)}
 .txt-muted{color:var(--text-muted)}
@@ -905,14 +988,25 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
     </div>
   </div>
 
+  <div class="sb-backdrop" onclick="toggleSidebar(false)"></div>
+
+  <!-- Barra di navigazione in basso (solo telefono, studenti) -->
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Navigazione">
+    <button data-view="s-home" onclick="bnGo('s-home',0)"><i class="ti ti-home"></i><span>I miei corsi</span></button>
+    <button data-view="s-chat" onclick="bnGo('s-chat',1)"><i class="ti ti-message-circle"></i><span>Messaggi</span><b class="bn-badge" id="bn-chat-badge"></b></button>
+    <button data-view="libretto" onclick="bnGo('libretto',2)"><i class="ti ti-clock-hour-4"></i><span>Ore formative</span></button>
+    <button data-view="settings" onclick="bnGo('settings',3)"><i class="ti ti-settings"></i><span>Impostazioni</span></button>
+  </nav>
+
   <!-- Main -->
   <div class="main">
     <div class="topbar">
+      <button class="tb-menu" onclick="toggleSidebar()" aria-label="Apri il menu" title="Menu"><i class="ti ti-menu-2"></i></button>
       <span class="topbar-title" id="topbar-title">Dashboard</span>
       <button id="pwa-install-btn" onclick="pwaInstall()" class="btn btn-sm" title="Installa l'app sul tuo dispositivo" style="flex-shrink:0">
-        <i class="ti ti-device-mobile-down"></i> Installa app
+        <i class="ti ti-device-mobile-down"></i> <span class="tb-lbl">Installa app</span>
       </button>
-      <button class="btn btn-sm" onclick="goLogin()" style="flex-shrink:0"><i class="ti ti-logout"></i> Esci</button>
+      <button class="btn btn-sm" onclick="goLogin()" style="flex-shrink:0" title="Esci"><i class="ti ti-logout"></i> <span class="tb-lbl">Esci</span></button>
     </div>
 
     <div class="content" id="main-content">
@@ -1156,7 +1250,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
       <div class="view" id="view-settings">
 
         <!-- Link verifica attestati pubblica -->
-        <div style="max-width:520px;margin-bottom:28px;background:var(--gold-100);border:1px solid rgba(197,146,63,.3);border-radius:var(--radius-lg);padding:18px 20px">
+        <div id="verifica-link-section" style="max-width:520px;margin-bottom:28px;background:var(--gold-100);border:1px solid rgba(197,146,63,.3);border-radius:var(--radius-lg);padding:18px 20px">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <div style="width:38px;height:38px;background:var(--gold-100);border:1px solid rgba(197,146,63,.4);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0">
               <i class="ti ti-certificate" style="font-size:18px;color:var(--gold-700)"></i>
@@ -2313,6 +2407,7 @@ async function saveUserToStorage(u){
     nome: u.nome, cognome: u.cognome,
     telefono: u.telefono||'', cf: u.cf||'',
     dataNascita: u.dataNascita||'', luogoNascita: u.luogoNascita||'',
+    ...(u.provinciaNascita!==undefined ? {provinciaNascita: u.provinciaNascita||''} : {}),
     indirizzo: u.indirizzo||'', comuneResidenza: u.comuneResidenza||'',
     provincia: u.provincia||'', cap: u.cap||'',
     role: u.role, tableId: u.tableId,
@@ -3122,6 +3217,9 @@ function switchRole(role,btn){
   applyRole(role);
 }
 function applyRole(role){
+  document.body.classList.toggle('role-admin', role==='admin');
+  document.body.classList.toggle('role-student', role!=='admin');
+  document.body.classList.remove('sb-open');
   const aN=document.getElementById('nav-admin');
   const sN=document.getElementById('nav-student');
   if(role==='admin'){
@@ -3144,7 +3242,7 @@ function applyRole(role){
     document.getElementById('sb-name').textContent=sName;
     document.getElementById('sb-badge').textContent='Autorizzato';
     document.getElementById('sb-av').textContent=sInitials;
-    showOnly('s-home');
+    showOnly('s-home'); _syncBottomNav('s-home');
     document.getElementById('topbar-title').textContent='I miei corsi';
     setActiveNav(document.querySelector('#nav-student .nav-item'));
     buildStudentHome();
@@ -3164,7 +3262,31 @@ function applyRole(role){
     setActiveNav(document.querySelector('#nav-student .nav-item'));
   }
 }
+// ── Navigazione su telefono ─────────────────────────────
+function toggleSidebar(force){
+  const open = force===undefined ? !document.body.classList.contains('sb-open') : !!force;
+  document.body.classList.toggle('sb-open', open);
+}
+function bnGo(view, idx){
+  const el=document.querySelectorAll('#nav-student .nav-item')[idx];
+  sv(view, el||null);
+}
+function _syncBottomNav(id){
+  document.querySelectorAll('#bottom-nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===id));
+}
+// il pallino "messaggi non letti" segue quello del menu laterale
+(function(){
+  const sync=()=>{ const s=document.getElementById('chat-unread-badge'), g=document.getElementById('s-group-unread-badge'), b=document.getElementById('bn-chat-badge');
+    if(!b) return; const on=(s&&s.style.display!=='none')||(g&&g.style.display!=='none'); b.classList.toggle('on',!!on); };
+  document.addEventListener('DOMContentLoaded',()=>{
+    ['chat-unread-badge','s-group-unread-badge'].forEach(id=>{ const el=document.getElementById(id); if(el) new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['style']}); });
+    sync();
+  });
+})();
+
 function sv(id,el){
+  document.body.classList.remove('sb-open');
+  _syncBottomNav(id);
   const titles={dashboard:'Dashboard',pending:'Nuove richieste',users:'Utenti e accessi',courses:'Catalogo corsi',settings:'Impostazioni','s-home':'I miei corsi','s-pending':'I miei corsi','s-chat':'Messaggi','admin-chat':'Messaggi studenti',verifica:'Verifica Attestati',libretto:'Ore formative'};
   showOnly(id);
   // Scroll to top ad ogni navigazione
@@ -5094,6 +5216,69 @@ function _drawSignature(doc,x,y,s){
   ], x, y, [s,s], 'S');
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ATTESTATI DAI MODELLI UFFICIALI (PDF)
+   I modelli in /attestati sono i PDF ufficiali della scuola con i soli
+   segnaposto {{…}} cancellati: la piattaforma scrive i dati dello
+   studente esattamente nella stessa posizione, carattere e colore.
+   Corsi senza modello dedicato → "generico" (stessa grafica, titolo e ore).
+═══════════════════════════════════════════════════════════════ */
+const CERT_TEMPLATES = {"c01":{"file":"attestati/modello-attestato-c01.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":101.74,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":82.97,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c02":{"file":"attestati/modello-attestato-c02.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":78.74,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":59.97,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c03":{"file":"attestati/modello-attestato-c03.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":78.74,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":59.97,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c04":{"file":"attestati/modello-attestato-c04.pdf","lines":[{"y":544.52,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":527.52,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":510.52,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":133.77,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":115.68,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c05":{"file":"attestati/modello-attestato-c05.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":216.62,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":197.85,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c07":{"file":"attestati/modello-attestato-c07.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":86.74,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":67.97,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"c08":{"file":"attestati/modello-attestato-c08.pdf","lines":[{"y":544.52,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":527.52,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":510.52,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":410.17,"align":"center","x":243.343,"runs":[{"font":"Times-Bold","size":13.0,"color":[0.0,0.0,0.0],"text":"{{specializzazione}}"}]},{"y":133.77,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":115.68,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]}]},"generico":{"file":"attestati/modello-attestato-generico.pdf","lines":[{"y":500.12,"align":"center","x":245.322,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{cognome}} {{nome}}"}]},{"y":483.12,"align":"center","x":144.38,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"nato/a il "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{dataNascita}}"},{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":" a "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{luogoNascita}} ({{provinciaNascita}})"}]},{"y":466.12,"align":"center","x":225.126,"runs":[{"font":"Times-Roman","size":11.0,"color":[0.0,0.0,0.0],"text":"codice fiscale: "},{"font":"Times-Bold","size":11.0,"color":[0.0,0.0,0.0],"text":"{{codiceFiscale}}"}]},{"y":101.74,"align":"left","x":57.024,"runs":[{"font":"Times-Roman","size":10.0,"color":[0.0,0.0,0.0],"text":"Data: {{dataOggi}}"}]},{"y":82.97,"align":"left","x":57.024,"runs":[{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"N° "},{"font":"Helvetica-Bold","size":7.5,"color":[0.6,0.6,0.6],"text":"{{certNum}}"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  "},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"|"},{"font":"Helvetica","size":7.5,"color":[0.6,0.6,0.6],"text":"  Verifica: nuova-piattaforma-sfv.netlify.app"}]},{"y":404.21,"align":"center","x":0,"fit":481,"runs":[{"font":"Times-Bold","size":21.0,"color":[0,0,0],"text":"{{titolo}}"}]},{"y":383.8,"align":"center","x":0,"runs":[{"font":"Times-Bold","size":11.0,"color":[0.1765,0.3137,0.0863],"text":"Durata corso: {{ore}} ore"}]}]}};
+const CERT_TEMPLATE_FOR = { c01:'c01', c02:'c02', c03:'c03', c04:'c04', c05:'c05', c07:'c07', c08:'c08', c06:'generico', c09:'generico' };
+const VERIFY_HOST_FALLBACK = 'nuova-piattaforma-corsi-scuola-faun.vercel.app';
+
+async function _loadPdfLib(){
+  if(window.PDFLib) return window.PDFLib;
+  await new Promise((res,rej)=>{
+    const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+    sc.onload=res; sc.onerror=()=>rej(new Error('pdf-lib non caricata'));
+    document.head.appendChild(sc);
+  });
+  return window.PDFLib;
+}
+// I caratteri standard del PDF coprono l'alfabeto italiano; altri simboli vengono semplificati
+function _pdfSafe(s){
+  return String(s==null?'':s).normalize('NFC').replace(/[^\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, ch=>{
+    const b=ch.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return /^[\x20-\x7E]+$/.test(b)?b:'';
+  });
+}
+async function _certFromTemplate(tplKey, vals){
+  const tpl=CERT_TEMPLATES[tplKey]; if(!tpl) return null;
+  const PDFLib=await _loadPdfLib();
+  const resp=await fetch(tpl.file); if(!resp.ok) throw new Error('modello non trovato: '+tpl.file);
+  const doc=await PDFLib.PDFDocument.load(await resp.arrayBuffer());
+  const page=doc.getPages()[0];
+  const FM={'Times-Roman':'TimesRoman','Times-Bold':'TimesRomanBold','Times-Italic':'TimesRomanItalic','Times-BoldItalic':'TimesRomanBoldItalic','Helvetica':'Helvetica','Helvetica-Bold':'HelveticaBold'};
+  const fonts={};
+  const font=async n=>fonts[n]||(fonts[n]=await doc.embedFont(PDFLib.StandardFonts[FM[n]||'TimesRoman']));
+  const PW=page.getWidth();
+  const host=(location.protocol.startsWith('http')&&location.host)?location.host:VERIFY_HOST_FALLBACK;
+  for(const line of tpl.lines){
+    let hadVar=false, anyVal=false;
+    const runs=[];
+    for(const r of line.runs){
+      let t=r.text.replace(/\{\{(\w+)\}\}/g,(m,k)=>{ hadVar=true; const v=_pdfSafe(vals[k]); if(v) anyVal=true; return v; });
+      t=t.replace(/\s*\(\s*\)/g,'');                       // provincia mancante → niente "()"
+      t=t.replace('nuova-piattaforma-sfv.netlify.app', host+'/verifica.html');
+      runs.push({...r, text:t, f:await font(r.font)});
+    }
+    if(hadVar && !anyVal) continue;                        // riga senza dati → non la scrivo
+    let scale=1;
+    const width=()=>runs.reduce((w,r)=>w+r.f.widthOfTextAtSize(r.text,r.size*scale),0);
+    if(line.fit){ while(width()>line.fit && scale>0.6) scale-=0.02; }
+    let x = line.align==='center' ? (PW-width())/2 : line.x;
+    for(const r of runs){
+      if(!r.text) continue;
+      const sz=r.size*scale;
+      page.drawText(r.text,{x, y:line.y, size:sz, font:r.f, color:PDFLib.rgb(r.color[0],r.color[1],r.color[2])});
+      x+=r.f.widthOfTextAtSize(r.text,sz);
+    }
+  }
+  return await doc.save();
+}
+
 async function downloadCertificate(studentName, courseName, studentId, existingCertNum, lessonKey){
   try{
     if(!window.jspdf||!window.jspdf.jsPDF){
@@ -5115,7 +5300,7 @@ async function downloadCertificate(studentName, courseName, studentId, existingC
     const u = USERS.find(x=>x.tableId===sid) || currentUser || {};
     const cognome   = u.cognome || '';
     const nome      = u.nome    || '';
-    const cf        = u.cf      ? u.cf.toUpperCase() : '';
+    const cf        = u.cf ? u.cf.toUpperCase() : (/^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/i.test(String(sid)) ? String(sid).toUpperCase() : '');
     const luogoN    = u.luogoNascita || '';
     const provN     = u.provinciaNascita || '';
     const dataN     = u.dataNascita
@@ -5133,6 +5318,35 @@ async function downloadCertificate(studentName, courseName, studentId, existingC
     const cid = (lessonKey ? String(lessonKey).split('__')[0] : '') || CORSI.find(c=>c.name===courseName)?.id || CORSI.find(c=>String(courseName||'').startsWith(c.name+' — '))?.id || '';
     if(['c10'].includes(cid)){ showToast('Questo corso non prevede il rilascio di un attestato.','info'); return; }
     const ore = courseOre[cid]||0;
+
+    // ── Modello ufficiale (PDF della scuola) ──────────
+    const tplKey = CERT_TEMPLATE_FOR[cid];
+    if(tplKey){
+      const isPreview = sid==='preview';
+      const specFromKey = lessonKey && String(lessonKey).includes('__') ? String(lessonKey).split('__').slice(1).join('__') : '';
+      const specs = specFromKey ? [specFromKey] : ((presets[sid]?.specs?.[cid]) || (u.specs?.[cid]) || []);
+      const vals = isPreview ? {
+        cognome:'Rossi', nome:'Mario', dataNascita:'01/01/1980', luogoNascita:'Treviso', provinciaNascita:'TV',
+        codiceFiscale:'RSSMRA80A01L407X', specializzazione:'Capriolo', dataOggi:dateOggi, certNum:'ANTEPRIMA',
+        titolo:String(courseName||'').toUpperCase(), ore:ore||''
+      } : {
+        cognome, nome, dataNascita:dataN, luogoNascita:luogoN, provinciaNascita:provN, codiceFiscale:cf,
+        specializzazione:specs.join(', '), dataOggi:dateOggi, certNum,
+        titolo:String(courseName||'').toUpperCase(), ore:ore||''
+      };
+      try{
+        const bytes=await _certFromTemplate(tplKey, vals);
+        if(bytes){
+          const blob=new Blob([bytes],{type:'application/pdf'});
+          const url=URL.createObjectURL(blob); const a=document.createElement('a');
+          const safeName=(cognome+'_'+nome+'_'+courseName).replace(/[^a-z0-9]+/gi,'_').slice(0,80);
+          a.href=url; a.download=`Attestato_${isPreview?'ANTEPRIMA':safeName+'_'+certNum}.pdf`;
+          document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000);
+          showToast(isPreview?'Anteprima attestato generata':`Attestato ${certNum} generato con successo`,'success');
+          return;
+        }
+      }catch(e){ console.warn('[SFV] modello attestato non disponibile, uso il modello interno',e); }
+    }
 
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF({unit:'mm', format:'a4'}); // portrait A4
@@ -5246,7 +5460,7 @@ async function downloadCertificate(studentName, courseName, studentId, existingC
     doc.setFont('times','normal'); doc.setFontSize(11); doc.setTextColor(55,58,45);
     doc.text(`Data: ${dateOggi}`, M, H-19);
     doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,145,130);
-    doc.text(`N° ${certNum}  |  Verifica: nuova-piattaforma-sfv.netlify.app`, M, H-14);
+    doc.text(`N° ${certNum}  |  Verifica: ${((location.protocol.startsWith('http')&&location.host)?location.host:VERIFY_HOST_FALLBACK)}/verifica.html`, M, H-14);
 
     // ── Pagina programma (solo modelli specifici) ─────
     if(_model?.program){ _certProgramPage(doc, _model, W, H, M, CW, certNum); }
@@ -5689,7 +5903,7 @@ function populateSettingsView(){
   const isStudent = currentUser && (currentUser.role === 'student-active' || currentUser.role === 'student-pending');
 
   // Sezioni solo admin
-  ['admin-recovery-section','admin-pwd-section','emailjs-section','certificate-section','student-reset-section','backup-section'].forEach(id=>{
+  ['verifica-link-section','admin-recovery-section','admin-pwd-section','emailjs-section','certificate-section','student-reset-section','backup-section'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display = isAdmin ? '' : 'none';
   });
@@ -7393,6 +7607,9 @@ function _renderAdminThreadList(unreadMap){
   }).join('');
 }
 
+function closeAdminThreadMobile(){
+  const p=document.getElementById('a-chat-panel-private'); if(p) p.classList.remove('thread-open');
+}
 function openAdminChatThread(studentId, studentName){
   _adminChatActive = studentId;
   if(_chatUnsubAdmin){ _chatUnsubAdmin(); _chatUnsubAdmin=null; }
@@ -7401,7 +7618,8 @@ function openAdminChatThread(studentId, studentName){
   const header=document.getElementById('admin-chat-header');
   const u=USERS.find(x=>x.tableId===studentId);
   const email=u?` — ${u.email}`:'';
-  if(header) header.innerHTML=`<div class="av" style="background:var(--green-100);color:var(--green-700);width:28px;height:28px;font-size:11px;flex-shrink:0">${studentName.slice(0,2).toUpperCase()}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${studentName}${email}</span>
+  const _pp=document.getElementById('a-chat-panel-private'); if(_pp) _pp.classList.add('thread-open');
+  if(header) header.innerHTML=`<button class="chat-back" onclick="closeAdminThreadMobile()" aria-label="Torna alle conversazioni"><i class="ti ti-arrow-left"></i></button><div class="av" style="background:var(--green-100);color:var(--green-700);width:28px;height:28px;font-size:11px;flex-shrink:0">${studentName.slice(0,2).toUpperCase()}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${studentName}${email}</span>
     <button class="btn btn-xs" style="flex-shrink:0;color:var(--red-700)" title="Elimina tutti i messaggi di questa conversazione (es. a fine corso)" onclick="deletePrivateChat(this.dataset.sid, this.dataset.sn)" data-sid="${_esc(studentId)}" data-sn="${_esc(studentName)}"><i class="ti ti-trash"></i> Elimina conversazione</button>`;
 
   const inputBar=document.getElementById('admin-chat-input-bar');
