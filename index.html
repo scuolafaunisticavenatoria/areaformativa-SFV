@@ -1846,7 +1846,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
           <div id="admin-groups-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px"></div>
           <div id="a-group-chat-area" style="display:none">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <button class="btn btn-xs" onclick="document.getElementById('a-group-chat-area').style.display='none';document.getElementById('admin-groups-list').style.display='grid'">
+              <button class="btn btn-xs" onclick="_activeGroupId=null;document.getElementById('a-group-chat-area').style.display='none';document.getElementById('admin-groups-list').style.display='grid';loadAdminGroups()">
                 <i class="ti ti-arrow-left"></i> Gruppi
               </button>
               <span id="a-group-chat-title" style="font-weight:600;font-size:14px"></span>
@@ -8111,7 +8111,9 @@ function _watchAdminGroupUnread(){
         .collection('messages').orderBy('ts','asc').onSnapshot(ms=>{
           let unread=0, last=null;
           ms.forEach(d=>{ const m=d.data(); if(m.from!=='admin' && !(m.readBy||[]).includes('admin')) unread++; last=m; });
-          if(_activeGroupId===cid) unread=0;  // thread gruppo aperto = letti
+          // Forza 0 solo se QUESTO gruppo è aperto adesso (area chat visibile)
+          const groupAreaOpen = document.getElementById('a-group-chat-area') && document.getElementById('a-group-chat-area').offsetParent!==null;
+          if(_activeGroupId===cid && groupAreaOpen) unread=0;
           window._adminGroupUnread[cid]=unread;
           if(last){
             window._adminGroupLast[cid]={
