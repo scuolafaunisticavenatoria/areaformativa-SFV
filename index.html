@@ -1058,6 +1058,15 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
           <div id="dash-device-list"></div>
         </div>
 
+        <!-- Messaggi in evidenza -->
+        <div id="dash-messages-wrap" style="margin-bottom:22px;display:none">
+          <div class="section-head">
+            <h3><i class="ti ti-message-2" style="color:var(--green-600);font-size:16px;margin-right:6px"></i>Messaggi in evidenza</h3>
+            <span class="badge bg-green" id="dash-messages-count" style="display:none">0</span>
+          </div>
+          <div id="dash-messages-list"></div>
+        </div>
+
         <!-- Da attivare -->
         <div>
           <div class="section-head">
@@ -1802,6 +1811,7 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
           </button>
           <button class="sd-tab" id="atab-groups" onclick="sAdminChatTab('groups',this)">
             <i class="ti ti-messages" style="font-size:13px"></i> Gruppi corso
+            <span class="nav-badge" id="a-group-unread-badge" style="display:none;position:static;margin-left:4px;background:var(--green-600)">0</span>
           </button>
         </div>
 
@@ -7550,8 +7560,11 @@ function _watchAdminUnread(){
       if(last){
         window._chatLastMsg[sid]=(last.text||'').slice(0,45)+((last.text||'').length>45?'…':'');
         window._chatLastTs[sid]=_chatTimeStr(last.ts);
+        window._chatLastTsRaw=window._chatLastTsRaw||{};
+        window._chatLastTsRaw[sid]=(last.ts&&last.ts.toMillis)?last.ts.toMillis():0;
       }
       _refreshAdminUnreadBadge();
+      if(typeof refreshDashboardMessages==='function') refreshDashboardMessages();
       // Ridisegna la lista solo se la vista messaggi è aperta
       if(document.getElementById('view-admin-chat')?.classList.contains('active')
          || document.getElementById('a-chat-panel-private')?.offsetParent!==null){
@@ -7561,6 +7574,7 @@ function _watchAdminUnread(){
   });
 
   _refreshAdminUnreadBadge();
+  _watchAdminGroupUnread();   // avvia anche i contatori dei gruppi
 }
 
 function _refreshAdminUnreadBadge(){
@@ -7912,6 +7926,7 @@ async function loadAdminGroups(){
             <div style="font-family:var(--font-display);font-weight:600;font-size:15px">${g.courseName||g.id}</div>
             <div style="font-size:11px;color:var(--text-muted)">${members.length} iscritti attivi</div>
           </div>
+          <span class="grp-unread-pill" id="a-grp-unread-${g.courseId||g.id}" style="display:none"></span>
         </div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.7">${members.length
           ?members.slice(0,5).map(u=>`<span style="background:var(--surface2);border-radius:var(--radius-full);padding:2px 8px;margin:2px 2px 2px 0;display:inline-block;font-size:10px">${u.nome} ${u.cognome}</span>`).join('')+(members.length>5?`<span style="font-size:10px"> +${members.length-5} altri</span>`:'')
@@ -7922,6 +7937,14 @@ async function loadAdminGroups(){
         </div>
       </div>`;
     }).join('');
+    // Applica i contatori non letti correnti sulle card
+    if(window._adminGroupUnread){
+      Object.entries(window._adminGroupUnread).forEach(([cid,n])=>{
+        const p=document.getElementById('a-grp-unread-'+cid);
+        if(p){ p.textContent=n; p.style.display=n>0?'':'none'; }
+      });
+    }
+    _watchAdminGroupUnread();
   }catch(e){ container.innerHTML='<div style="color:var(--red-700);grid-column:1/-1;text-align:center;padding:20px">Errore caricamento</div>'; }
 }
 
@@ -8061,6 +8084,56 @@ async function _watchGroupUnreadBadge(){
         if(badge){ badge.textContent=total>0?total:'!'; badge.style.display=total>0?'':'none'; }
       },()=>{});
   });
+}
+
+// ── Contatori messaggi gruppi LATO ADMIN ────────────────────
+let _adminGroupUnsubs = {};   // { [courseId]: unsubscribe }
+function _watchAdminGroupUnread(){
+  if(!currentUser || currentUser.role!=='admin') return;
+  if(!db || typeof db.collection!=='function') return;
+  window._adminGroupUnread = window._adminGroupUnread || {};
+  window._adminGroupLast   = window._adminGroupLast   || {};
+  db.collection('group_chats').where('active','==',true).get().then(snap=>{
+    const groups=[]; snap.forEach(d=>groups.push({id:d.id, name:(d.data().courseName||d.id)}));
+    // Stacca i listener di gruppi non più attivi
+    Object.keys(_adminGroupUnsubs).forEach(cid=>{
+      if(!groups.some(g=>g.id===cid)){
+        try{ _adminGroupUnsubs[cid](); }catch(e){}
+        delete _adminGroupUnsubs[cid];
+        delete window._adminGroupUnread[cid];
+        delete window._adminGroupLast[cid];
+      }
+    });
+    groups.forEach(g=>{
+      const cid=g.id;
+      if(_adminGroupUnsubs[cid]) return;   // già in ascolto
+      _adminGroupUnsubs[cid]=db.collection('group_chats').doc(cid)
+        .collection('messages').orderBy('ts','asc').onSnapshot(ms=>{
+          let unread=0, last=null;
+          ms.forEach(d=>{ const m=d.data(); if(m.from!=='admin' && !(m.readBy||[]).includes('admin')) unread++; last=m; });
+          if(_activeGroupId===cid) unread=0;  // thread gruppo aperto = letti
+          window._adminGroupUnread[cid]=unread;
+          if(last){
+            window._adminGroupLast[cid]={
+              name:g.name,
+              text:(last.text||'').slice(0,45)+((last.text||'').length>45?'…':''),
+              who:(last.senderName||'').trim(),
+              ts:last.ts,
+              tsStr:_chatTimeStr(last.ts)
+            };
+          }
+          // pallino sulla card del gruppo
+          const pill=document.getElementById('a-grp-unread-'+cid);
+          if(pill){ pill.textContent=unread; pill.style.display=unread>0?'':'none'; }
+          // badge totale sulla tab "Gruppi corso"
+          const total=Object.values(window._adminGroupUnread).reduce((s,v)=>s+(v||0),0);
+          const tb=document.getElementById('a-group-unread-badge');
+          if(tb){ tb.textContent=total; tb.style.display=total>0?'':'none'; }
+          // aggiorna i messaggi in evidenza nella dashboard
+          if(typeof refreshDashboardMessages==='function') refreshDashboardMessages();
+        }, err=>console.warn('admin group unread error', cid, err));
+    });
+  }).catch(()=>{});
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -8434,6 +8507,73 @@ function refreshDashboardAdmin(){
   refreshDashboardExpiry();
   refreshDashboardNavBadge();
   refreshDashboardDeviceRequests();
+  refreshDashboardMessages();
+}
+
+// Apre direttamente la chat di gruppo dalla dashboard
+function openGroupFromDashboard(courseId, courseName){
+  sv('admin-chat', document.getElementById('nav-admin-chat'));
+  setTimeout(()=>{
+    sAdminChatTab('groups', document.getElementById('atab-groups'));
+    setTimeout(()=>openAdminGroup(courseId, courseName), 300);
+  }, 200);
+}
+
+// Messaggi in evidenza nella dashboard (privati + gruppi, solo non letti)
+function refreshDashboardMessages(){
+  const wrap=document.getElementById('dash-messages-wrap');
+  const list=document.getElementById('dash-messages-list');
+  const cnt =document.getElementById('dash-messages-count');
+  if(!wrap||!list) return;
+  if(!currentUser||currentUser.role!=='admin'){ wrap.style.display='none'; return; }
+
+  const items=[];
+  // Chat private non lette
+  const pu=window._chatUnreadMap||{};
+  Object.entries(pu).forEach(([sid,n])=>{
+    if(!n) return;
+    const u=USERS.find(x=>x.tableId===sid);
+    const name=u?((u.nome||'')+' '+(u.cognome||'')).trim():sid;
+    items.push({ n:n,
+      title:name||'Studente',
+      text:(window._chatLastMsg&&window._chatLastMsg[sid])||'Nuovo messaggio',
+      when:(window._chatLastTs&&window._chatLastTs[sid])||'',
+      ts:(window._chatLastTsRaw&&window._chatLastTsRaw[sid])||0,
+      icon:'ti-message-circle', color:'var(--green-700)', bg:'var(--green-100)',
+      onclick:`openChatFromPopup('${sid}')` });
+  });
+  // Gruppi corso non letti
+  const gu=window._adminGroupUnread||{};
+  Object.entries(gu).forEach(([cid,n])=>{
+    if(!n) return;
+    const last=(window._adminGroupLast&&window._adminGroupLast[cid])||{};
+    const nm=last.name||cid;
+    items.push({ n:n,
+      title:'Gruppo · '+nm,
+      text:(last.who?last.who+': ':'')+(last.text||'Nuovi messaggi'),
+      when:last.tsStr||'',
+      ts:(last.ts&&last.ts.toMillis)?last.ts.toMillis():0,
+      icon:'ti-messages', color:'var(--blue-700)', bg:'var(--blue-100)',
+      onclick:`openGroupFromDashboard('${cid}','${String(nm).replace(/'/g,"\\'")}')` });
+  });
+
+  if(!items.length){ wrap.style.display='none'; list.innerHTML=''; if(cnt)cnt.style.display='none'; return; }
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const totalMsgs=items.reduce((s,it)=>s+it.n,0);
+  wrap.style.display='';
+  if(cnt){ cnt.textContent=totalMsgs; cnt.style.display=''; }
+  list.innerHTML=items.map(it=>`
+    <div onclick="${it.onclick}" style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:11px 14px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow-sm);transition:border-color .15s" onmouseover="this.style.borderColor='var(--green-400)'" onmouseout="this.style.borderColor='var(--border-light)'">
+      <div style="width:38px;height:38px;border-radius:var(--radius-lg);background:${it.bg};color:${it.color};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${it.icon}" style="font-size:18px"></i></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(it.title)}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(it.text)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <span class="grp-unread-pill" style="background:var(--green-500)">${it.n}</span>
+        <span style="font-size:10px;color:var(--text-muted)">${it.when}</span>
+      </div>
+    </div>`).join('');
 }
 
 function refreshDashboardNavBadge(){
