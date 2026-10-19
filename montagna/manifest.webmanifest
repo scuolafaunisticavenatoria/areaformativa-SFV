@@ -1,0 +1,33 @@
+{
+  "name": "SFV Montagna — Scuola Faunistica Venatoria",
+  "short_name": "SFV Montagna",
+  "description": "App gratuita per il cacciatore di montagna: scadenze dei documenti, calendario del comprensorio alpino, biometria e distanza reale di tiro.",
+  "id": "/montagna/",
+  "start_url": "/montagna/",
+  "scope": "/montagna/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F6F0",
+  "theme_color": "#16290D",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/montagna/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/montagna/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/montagna/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

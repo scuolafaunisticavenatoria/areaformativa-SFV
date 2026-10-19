@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>App SFV — Scuola Faunistica Venatoria</title>
+<meta name="description" content="Le app gratuite della Scuola Faunistica Venatoria: SFV Montagna e SFV Pianura.">
+<meta name="theme-color" content="#16290D">
+<link rel="icon" type="image/svg+xml" href="/montagna/simbolo.svg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{--green-900:#0B1A06;--green-800:#16290D;--green-700:#234A14;--green-600:#33651C;--green-200:#C7DDA6;--green-100:#E9F1DF;
+  --gold-500:#C5923F;--gold-400:#D4A855;--bg:#F8F6F0;--surface:#fff;--border-light:#EAE7DA;--text:#1B2414;--text-2:#5C6450;--text-3:#8C9180;
+  --font-display:'Fraunces',Georgia,serif;--font-body:'DM Sans',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100dvh;-webkit-font-smoothing:antialiased}
+header{background:linear-gradient(170deg,var(--green-800),var(--green-700));color:#fff;text-align:center;padding:calc(34px + env(safe-area-inset-top,0px)) 20px 70px}
+header .simboli{display:flex;justify-content:center;gap:14px;margin-bottom:16px}
+header .simboli img{width:66px;height:66px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+h1{font-family:var(--font-display);font-size:28px;font-weight:600;line-height:1.15;text-wrap:balance}
+header p{color:var(--green-200);font-size:15px;margin-top:8px}
+main{max-width:720px;margin:-46px auto 0;padding:0 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.scelte{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.scelte{grid-template-columns:1fr}}
+.app{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:290px;border-radius:20px;overflow:hidden;color:#fff;text-decoration:none;
+  background:linear-gradient(135deg,var(--green-800),var(--green-600));box-shadow:0 12px 36px rgba(14,26,9,.18);isolation:isolate;transition:transform .15s}
+.app:active{transform:scale(.98)}
+.app>img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.app::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,26,6,.05) 20%,rgba(11,26,6,.9) 100%)}
+.app .corpo{padding:18px}
+.app .simb{width:58px;height:58px;margin-bottom:10px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))}
+.app h2{font-family:var(--font-display);font-size:26px;font-weight:600}
+.app p{font-size:14px;color:var(--green-100);margin-top:4px;line-height:1.45}
+.app ul{list-style:none;margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.app li{font-size:12px;font-weight:600;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);padding:4px 9px;border-radius:999px}
+.app .vai{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:var(--gold-500);color:#fff;font-weight:700;font-size:15px;padding:11px 16px;border-radius:12px}
+.install{background:var(--surface);border:1px solid var(--border-light);border-radius:16px;padding:16px;margin-top:16px}
+.install h3{font-size:16px;margin-bottom:10px}
+.install .passi{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.install .passi{grid-template-columns:1fr}}
+.install .passi div{background:var(--bg);border-radius:12px;padding:12px}
+.install .passi b{color:var(--green-700)}
+.install p{font-size:14px;color:var(--text-2);line-height:1.5;margin-top:4px}
+.install>p{margin-top:12px}
+.nota{font-size:13px;color:var(--text-2);text-align:center;margin:18px auto 0;max-width:46ch;line-height:1.5}
+.partners{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:22px;padding:14px 16px;background:var(--surface);border:1px solid var(--border-light);border-radius:16px}
+.partners img{display:block;height:auto;max-width:100%}
+.partners .s{width:200px;border-radius:6px}
+.partners .c{width:96px}
+a:focus-visible{outline:3px solid var(--gold-400);outline-offset:3px}
+</style>
+</head>
+<body>
+<header>
+  <div class="simboli"><img src="/montagna/simbolo.svg" alt=""><img src="/pianura/simbolo.svg" alt=""></div>
+  <h1>Le app gratuite della Scuola Faunistica Venatoria</h1>
+  <p>Scegli quella adatta alla tua caccia</p>
+</header>
+<main>
+  <div class="scelte">
+    <a class="app" href="/montagna/">
+      <img class="ph" alt="" src="https://commons.wikimedia.org/wiki/Special:FilePath/G%C3%A4mse_(Rupicapra_rupicapra)_auf_dem_Ornach_05.jpg?width=900" onerror="this.remove()">
+      <div class="corpo">
+        <img class="simb" src="/montagna/simbolo.svg" alt="">
+        <h2>SFV Montagna</h2>
+        <p>Per chi caccia in Zona Alpi: ungulati e tetraonidi.</p>
+        <ul><li>Comprensorio alpino</li><li>Biometria</li><li>Distanza di tiro</li><li>Scadenze</li></ul>
+        <span class="vai">Apri SFV Montagna →</span>
+      </div>
+    </a>
+    <a class="app" href="/pianura/">
+      <img class="ph" alt="" src="https://commons.wikimedia.org/wiki/Special:FilePath/Common_pheasant_(Phasianus_colchicus)_male_Heligan.jpg?width=900" onerror="this.remove()">
+      <div class="corpo">
+        <img class="simb" src="/pianura/simbolo.svg" alt="">
+        <h2>SFV Pianura</h2>
+        <p>Per la caccia in pianura e collina: stanziale e migratoria.</p>
+        <ul><li>Calendari regionali</li><li>Scadenze</li></ul>
+        <span class="vai">Apri SFV Pianura →</span>
+      </div>
+    </a>
+  </div>
+  <div class="install">
+    <h3>Come installarla sul telefono</h3>
+    <div class="passi">
+      <div><b>Android</b><p>Apri l'app scelta con Chrome e tocca <b>Installa</b> (oppure menu ⋮ → <b>Installa app</b>).</p></div>
+      <div><b>iPhone</b><p>Apri l'app scelta con Safari, tocca <b>Condividi</b> (il quadrato con la freccia) → <b>Aggiungi alla schermata Home</b>.</p></div>
+    </div>
+    <p>L'icona comparirà sul telefono come un'app normale. È gratuita e non serve nessuno store.</p>
+  </div>
+  <p class="nota">Con lo stesso account entri in entrambe. Puoi installarle tutte e due: avranno icone diverse.</p>
+  <div class="partners">
+    <a href="https://www.scuolafaunisticavenatoria.it" target="_blank" rel="noopener"><img class="s" src="/montagna/logo-scuola.jpg" alt="Scuola Faunistica Venatoria"></a>
+    <a href="https://cal-resana-outdoor.vercel.app/" target="_blank" rel="noopener"><img class="c" src="/montagna/logo-calresana.png" alt="Cal Resana Outdoor"></a>
+  </div>
+</main>
+</body>
+</html>

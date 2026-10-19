@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<script>if(/\/app$/.test(location.pathname))location.replace(location.pathname+"/"+location.search+location.hash);</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SFV Pianura — Scuola Faunistica Venatoria</title>
+<script>window.SFV_APP="pianura";</script>
+<meta name="description" content="App gratuita per il cacciatore di pianura: scadenze dei documenti e calendari venatori regionali.">
+
+<!-- App installabile -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#16290D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SFV Pianura">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="simbolo.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<link rel="stylesheet" href="icone.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --green-900:#0B1A06; --green-800:#16290D; --green-700:#234A14; --green-600:#33651C;
+  --green-500:#47802A; --green-400:#6BAF4A; --green-200:#C7DDA6; --green-100:#E9F1DF; --green-50:#F6F8F1;
+  --gold-700:#8A5E22; --gold-500:#C5923F; --gold-400:#D4A855; --gold-100:#F8ECD4;
+  --amber-700:#854F0B; --amber-100:#FAEEDA; --amber-200:#FAC775;
+  --red-700:#A32D2D; --red-100:#FCEBEB; --red-200:#F09595;
+  --bg:#F8F6F0; --surface:#FFFFFF; --surface2:#F1F0E8; --surface3:#E7E4D8;
+  --border:#DDD9C9; --border-light:#EAE7DA;
+  --text:#1B2414; --text-2:#5C6450; --text-3:#8C9180;
+  --font-display:'Fraunces',serif; --font-body:'DM Sans',system-ui,sans-serif;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px;
+  --shadow-sm:0 1px 3px rgba(14,26,9,.08); --shadow-md:0 6px 20px rgba(14,26,9,.10);
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;min-height:100dvh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--green-600)}
+.hidden{display:none!important}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+
+/* ── Accesso ─────────────────────────────── */
+#auth{min-height:100dvh;display:flex;flex-direction:column;background:linear-gradient(170deg,var(--green-800) 0%,var(--green-700) 42%,var(--bg) 42.1%)}
+.auth-head{padding:calc(36px + var(--safe-t)) 24px 28px;text-align:center;color:#fff}
+.auth-head img{width:104px;height:104px;border-radius:50%;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.auth-head h1{font-family:var(--font-display);font-size:26px;font-weight:600;margin-top:14px;letter-spacing:-.01em}
+.auth-head p{color:var(--green-200);font-size:14px;margin-top:4px}
+.auth-card{background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-md);padding:22px 20px 24px;margin:0 16px 24px;max-width:440px;align-self:center;width:calc(100% - 32px)}
+.tabs-auth{display:flex;background:var(--surface2);border-radius:999px;padding:4px;margin-bottom:18px}
+.tabs-auth button{flex:1;padding:9px;border-radius:999px;font-weight:600;font-size:14px;color:var(--text-2)}
+.tabs-auth button.on{background:var(--surface);color:var(--green-700);box-shadow:var(--shadow-sm)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+.input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);background:var(--surface);font-size:16px;outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--green-500)}
+textarea.input{min-height:80px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-2);margin:10px 0}
+.check input{width:20px;height:20px;flex-shrink:0;margin-top:1px;accent-color:var(--green-600)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:var(--r-md);font-weight:600;font-size:15px;transition:transform .1s,background .15s}
+.btn:active{transform:scale(.98)}
+.btn i{font-size:18px}
+.btn-primary{background:var(--green-700);color:#fff;width:100%}
+.btn-primary:hover{background:var(--green-600)}
+.btn-primary:disabled{opacity:.6}
+.btn-gold{background:var(--gold-500);color:#fff}
+.btn-soft{background:var(--green-100);color:var(--green-700)}
+.btn-ghost{background:var(--surface2);color:var(--text)}
+.btn-danger{background:var(--red-100);color:var(--red-700)}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:var(--r-sm)}
+.btn-sm i{font-size:16px}
+.link{color:var(--green-600);font-weight:600;font-size:13px;background:none;text-decoration:underline;text-underline-offset:2px}
+.msg{padding:10px 12px;border-radius:var(--r-sm);font-size:13px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.msg i{font-size:17px;margin-top:1px}
+.msg.err{background:var(--red-100);color:var(--red-700)}
+.msg.ok{background:var(--green-100);color:var(--green-700)}
+.auth-foot{text-align:center;font-size:12px;color:var(--text-3);padding:0 24px 28px}
+
+/* ── App ─────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:20;background:var(--green-800);color:#fff;padding:calc(10px + var(--safe-t)) 0 10px}
+.topbar .wrap{display:flex;align-items:center;gap:12px}
+.topbar img{width:40px;height:40px;border-radius:50%}
+.topbar .t1{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.1}
+.topbar .t2{font-size:12px;color:var(--green-200)}
+.topbar .sp{flex:1}
+.topbar .ibtn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.1)}
+.topbar .ibtn i{font-size:20px}
+main.wrap{padding:18px 16px calc(34px + var(--safe-b))}
+.view{display:none}
+.view.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2.title{font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px}
+.sub{color:var(--text-2);font-size:14px;margin-bottom:16px}
+h3.sec{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:22px 0 10px;display:flex;align-items:center;justify-content:space-between}
+h3.sec button{text-transform:none;letter-spacing:0}
+.card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm)}
+.card+.card{margin-top:10px}
+
+/* Riquadro scadenze in home */
+.alert-box{border-radius:var(--r-lg);padding:16px;display:flex;gap:14px;align-items:flex-start}
+.alert-box .ic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.alert-box .ic i{font-size:22px}
+.alert-box h4{font-size:15px;font-weight:700}
+.alert-box p{font-size:13px}
+.alert-box ul{list-style:none;margin-top:8px}
+.alert-box li{font-size:14px;padding:3px 0;display:flex;justify-content:space-between;gap:10px}
+.alert-box li b{font-weight:600}
+.al-red{background:var(--red-100);color:var(--red-700)} .al-red .ic{background:var(--red-700);color:#fff}
+.al-amber{background:var(--amber-100);color:var(--amber-700)} .al-amber .ic{background:var(--gold-500);color:#fff}
+.al-green{background:var(--green-100);color:var(--green-700)} .al-green .ic{background:var(--green-600);color:#fff}
+
+.school{background:linear-gradient(135deg,var(--green-700),var(--green-600));color:#fff;border-radius:var(--r-lg);padding:18px;position:relative;overflow:hidden}
+.school::after{content:"";position:absolute;right:-30px;bottom:-40px;width:140px;height:140px;border-radius:50%;border:18px solid rgba(197,146,63,.25)}
+.school h4{font-family:var(--font-display);font-size:19px;font-weight:600}
+.school p{font-size:13px;color:var(--green-100);margin:4px 0 12px;max-width:85%}
+.school .btns{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
+.school a{text-decoration:none}
+
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--r-lg);padding:14px;text-align:left;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-sm)}
+.cat i{font-size:24px;color:var(--green-600);width:42px;height:42px;border-radius:12px;background:var(--green-50);display:flex;align-items:center;justify-content:center}
+.cat b{font-size:14px;line-height:1.25}
+.cat span{font-size:12px;color:var(--text-3)}
+
+/* Documenti */
+.search{position:relative;margin-bottom:12px}
+.search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:18px}
+.search .input{padding-left:42px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:500;color:var(--text-2)}
+.chip.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+.doc{display:flex;gap:12px;align-items:flex-start;padding:14px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--r-lg);margin-bottom:10px;box-shadow:var(--shadow-sm);width:100%;text-align:left}
+.doc .ic{width:42px;height:42px;border-radius:12px;background:var(--gold-100);color:var(--gold-700);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.doc .ic i{font-size:21px}
+.doc .bd{flex:1;min-width:0}
+.doc .tt{font-weight:600;font-size:15px;line-height:1.3}
+.doc .ds{font-size:13px;color:var(--text-2);margin-top:2px}
+.doc .mt{font-size:12px;color:var(--text-3);margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.doc .go{color:var(--text-3);font-size:20px;align-self:center}
+.badge-new{background:var(--gold-500);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;letter-spacing:.04em;vertical-align:2px;margin-left:4px}
+.empty{text-align:center;padding:34px 18px;color:var(--text-3)}
+.empty i{font-size:40px;color:var(--border);display:block;margin-bottom:8px}
+.empty b{display:block;color:var(--text-2);font-size:15px;margin-bottom:4px}
+
+/* Scadenze */
+.privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-50);border:1px dashed var(--green-200);border-radius:var(--r-md);padding:12px;font-size:13px;color:var(--green-700);margin-bottom:16px}
+.privacy-note i{font-size:20px;flex-shrink:0}
+.scad{background:var(--surface);border:1px solid var(--border-light);border-left:5px solid var(--green-400);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.scad.st-amber{border-left-color:var(--gold-500)}
+.scad.st-red{border-left-color:var(--red-700)}
+.scad .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.scad .nm{font-weight:600;font-size:15px;line-height:1.3}
+.scad .dt{font-size:13px;color:var(--text-2);margin-top:2px}
+.scad .nt{font-size:13px;color:var(--text-3);margin-top:4px}
+.pill{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.pill.green{background:var(--green-100);color:var(--green-700)}
+.pill.amber{background:var(--amber-100);color:var(--amber-700)}
+.pill.red{background:var(--red-100);color:var(--red-700)}
+.scad .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+
+/* Profilo */
+.prof-head{display:flex;gap:14px;align-items:center}
+.avatar{width:56px;height:56px;border-radius:50%;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:600}
+.list-row{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--border-light);width:100%;text-align:left;font-size:15px}
+.list-row:last-child{border-bottom:none}
+.list-row i{font-size:20px;color:var(--green-600);width:24px}
+.list-row .sp{flex:1}
+.list-row .chev{color:var(--text-3)}
+
+/* Barra in basso */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding-bottom:var(--safe-b)}
+.tabbar .wrap{display:flex;padding:0 6px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 8px;font-size:11px;font-weight:600;color:var(--text-3);position:relative}
+.tabbar button i{font-size:23px}
+.tabbar button.on{color:var(--green-700)}
+.tabbar .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--red-700);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center}
+
+/* Loghi in fondo a ogni pagina */
+.partners{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:28px;padding:14px 16px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--r-lg)}
+.partners a{display:block;border-radius:var(--r-sm);transition:transform .15s}
+.partners a:active{transform:scale(.97)}
+.partners img{display:block;height:auto;max-width:100%}
+.partners .pl-scuola{width:200px;border-radius:6px}
+.partners .pl-cal{width:96px}
+#auth .partners{margin:0 16px 20px;max-width:440px;align-self:center;width:calc(100% - 32px)}
+/* Calendario */
+.cal-head{display:flex;gap:12px;align-items:stretch;justify-content:space-between;background:linear-gradient(135deg,var(--green-800),var(--green-600));color:#fff;border-radius:var(--r-lg);padding:16px;margin-bottom:10px}
+.cal-head .eyebrow{color:var(--green-200)}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.cal-title{font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.15}
+.cal-upd{font-size:12px;color:var(--green-200);margin-top:2px}
+.today{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:var(--r-md);padding:8px 12px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-width:92px}
+.today b{font-family:var(--font-display);font-size:30px;line-height:1;color:var(--gold-400);font-variant-numeric:tabular-nums}
+.today span{font-size:11px;color:var(--green-100);line-height:1.2;margin-top:2px}
+.kvs{display:flex;flex-direction:column;gap:12px}
+.kv{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.kv i{font-size:19px;color:var(--green-600);margin-top:1px}
+.kv b{display:block;font-size:12px;color:var(--text-3);font-weight:600}
+.kv span{white-space:pre-line}
+.spr{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--border-light);border-left:4px solid var(--border);border-radius:var(--r-md);padding:12px 12px 12px 14px;margin-bottom:8px}
+.spr.st-green{border-left-color:var(--green-400)} .spr.st-amber{border-left-color:var(--gold-500)} .spr.st-grey{opacity:.72}
+.sp-bd{min-width:0}
+.sp-nm{font-weight:600;font-size:15px}
+.sp-dt{font-size:13px;color:var(--text-2)}
+.sp-nt{font-size:12px;color:var(--text-3);margin-top:2px}
+.pill.grey{background:var(--surface2);color:var(--text-3)}
+.fine{font-size:12px;color:var(--text-3);margin-top:14px;line-height:1.45}
+.alpi{background:var(--green-50);border:1px solid var(--green-200);border-radius:var(--r-lg);overflow:hidden}
+.alpi-hd{display:flex;gap:12px;align-items:center;background:var(--green-800);color:#fff;padding:14px 14px 14px 16px}
+.alpi-hd>i{font-size:28px;color:var(--gold-400)}
+.alpi-nm{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.2}
+.alpi-sub{font-size:13px;color:var(--green-200)}
+.ibtn-l{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ibtn-l i{font-size:18px}
+.alpi-note{font-size:13px;color:var(--text-2);padding:12px 16px;border-bottom:1px solid var(--green-200);background:var(--surface)}
+.alpi-list{padding:12px}
+.alpi-priv{font-size:12px;color:var(--green-700);padding:0 16px 12px;display:flex;gap:6px;align-items:center}
+.alpi-empty{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1.5px dashed var(--green-200);border-radius:var(--r-lg);padding:16px}
+.alpi-empty>i{font-size:30px;color:var(--green-600);flex-shrink:0}
+.alpi-empty b{font-size:15px}
+.alpi-empty p{font-size:13px;color:var(--text-2);margin-top:2px}
+.home-cal{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--r-lg);padding:14px;box-shadow:var(--shadow-sm);margin-top:10px}
+.home-cal .ic{width:42px;height:42px;border-radius:12px;background:var(--green-100);color:var(--green-700);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.home-cal .ic i{font-size:22px}
+.home-cal h4{font-size:15px;font-weight:700}
+.home-cal p{font-size:13px;color:var(--text-2)}
+.sheet h3.sec{font-family:var(--font-body);font-size:13px;font-weight:700;margin-bottom:8px}
+.reg-pick{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:4px 6px 4px 14px}
+.reg-pick i{font-size:20px;color:var(--green-600)}
+.reg-pick span{font-size:13px;font-weight:600;color:var(--text-2);white-space:nowrap}
+.reg-pick select{flex:1;min-width:0;border:none;background:transparent;font-size:16px;font-weight:600;padding:9px 4px;outline:none;color:var(--text)}
+.cal-badge{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-badge i{font-size:28px;color:var(--gold-400)}
+.reg-list{padding:2px 14px}
+.reg-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light);text-decoration:none;color:var(--text)}
+.reg-row:last-child{border-bottom:none}
+.reg-row .rn{flex:1;font-weight:500}
+.reg-row .rs{font-size:12px;font-weight:600;color:var(--green-700);background:var(--green-100);padding:3px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+.reg-row .rs.old{color:var(--amber-700);background:var(--amber-100)}
+.reg-row i{color:var(--text-3);font-size:18px}
+.reg-row.muted .rn{color:var(--text-2)}
+.reg-row.muted .rs{background:var(--surface2);color:var(--text-3)}
+.reg-adm{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border-light)}
+.reg-adm:last-child{border-bottom:none}
+.att{display:flex;align-items:center;gap:10px;background:var(--gold-100);border:1px solid #EBD3A8;border-radius:var(--r-md);padding:8px 8px 8px 12px;color:var(--gold-700);font-size:14px}
+.att>i{font-size:22px}
+.att span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.att-btns{display:flex;gap:8px;flex-wrap:wrap}
+.att-btns label{cursor:pointer}
+.ce-row{display:flex;flex-direction:column;gap:8px;background:var(--surface2);border-radius:var(--r-md);padding:10px;margin-bottom:8px}
+.ce-row .input{padding:9px 10px;font-size:15px}
+.admin-card{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--gold-100);border:1px solid #EBD3A8;color:var(--gold-700);border-radius:var(--r-lg);padding:14px;margin-bottom:14px}
+.admin-card i{font-size:24px}
+/* Foto della fauna */
+.hero{position:relative;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(135deg,var(--green-800),var(--green-600));color:#fff;min-height:150px;display:flex;align-items:flex-end;margin-bottom:16px;box-shadow:var(--shadow-md)}
+.hero img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,26,6,0) 25%,rgba(11,26,6,.82) 100%)}
+.hero-txt{position:relative;z-index:1;padding:16px 16px 14px}
+.hero-txt h2{font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.1;text-shadow:0 2px 10px rgba(0,0,0,.35)}
+.hero-txt p{font-size:13px;color:#E9F1DF;margin-top:4px;max-width:46ch}
+.ph-nome{position:absolute;top:10px;right:10px;z-index:1;font-size:11px;font-weight:600;background:rgba(11,26,6,.55);backdrop-filter:blur(4px);color:#fff;padding:3px 9px;border-radius:999px}
+.ph-nome:empty{display:none}
+.hero.tall{min-height:200px}
+.hero.no-foto .ph-nome{display:none}
+.foto{position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,var(--green-800),var(--green-600))!important;color:#fff!important;border:none!important}
+.foto>img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.foto::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,26,6,.15) 0%,rgba(11,26,6,.5) 45%,rgba(11,26,6,.88) 100%)}
+.foto .ph-nome{z-index:1}
+.cat.foto{min-height:150px;justify-content:flex-end;box-shadow:var(--shadow-md)}
+.cat.foto i{background:rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(4px)}
+.cat.foto b{text-shadow:0 1px 6px rgba(0,0,0,.4)}
+.cat.foto .cnt{color:#E9F1DF;font-size:12px}
+.cat.foto .ph-nome{top:8px;right:8px;font-size:10px}
+.home-cal.foto{min-height:120px;align-items:flex-end;box-shadow:var(--shadow-md)}
+.home-cal.foto .ic{background:rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(4px)}
+.home-cal.foto p{color:#E9F1DF}
+.home-cal.foto>.ti-chevron-right{color:#fff!important}
+.alpi-empty.foto{min-height:190px;align-items:flex-end}
+.alpi-empty.foto>i{color:var(--gold-400)}
+.alpi-empty.foto p{color:#E9F1DF}
+.bio-t{min-height:160px}
+.cat-grid .bio-t:last-child:nth-child(odd){grid-column:1/-1;min-height:140px}
+.bio-t .cnt{line-height:1.35}
+.bio-t .sci{font-style:italic;opacity:.85}
+.bio-doc.nascosta{opacity:.7;border-style:dashed}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--text-2)}
+.tag.ok{background:var(--green-100);color:var(--green-700)}
+.tag.no{background:var(--red-100);color:var(--red-700)}
+.bio-sw{background:var(--surface2);border-radius:var(--r-md);padding:4px 12px;margin-top:4px}
+.bio-sw .check span{font-size:13px}
+.bio-sw .check b{color:var(--text);font-size:14px}
+.home-bio{margin-top:10px;min-height:120px;align-items:flex-end}
+.pdfv{position:fixed;inset:0;z-index:80;background:#0E1A09;display:flex;flex-direction:column;animation:fadebg .2s}
+.pdfv-bar{display:flex;align-items:center;gap:6px;padding:calc(8px + var(--safe-t)) 10px 8px;background:var(--green-800);color:#fff}
+.pdfv-t{flex:1;min-width:0;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+.pdfv-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.1);text-decoration:none;flex-shrink:0}
+.pdfv-btn i{font-size:20px}
+.pdfv-pages{flex:1;overflow:auto;padding:12px 12px calc(20px + var(--safe-b));display:flex;flex-direction:column;align-items:center;gap:12px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pdfv-pages canvas{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.4);border-radius:4px;max-width:none}
+.tcard{margin-bottom:12px}
+.thd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.thd>i{font-size:22px;color:var(--green-600)}
+.thd b{font-size:16px;flex:1}
+.tsel{width:auto;max-width:55%;padding:7px 10px;font-size:14px}
+.tin{position:relative}
+.tin .input{padding-right:52px}
+.tin span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-3);pointer-events:none}
+.hint{font-size:12px;color:var(--text-3);margin-top:4px}
+.angv{font-weight:700;color:var(--green-700);margin-left:6px}
+.rng{width:100%;accent-color:var(--green-600);height:28px}
+.rng-l{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3)}
+.tris{background:linear-gradient(135deg,var(--green-800),var(--green-600));color:#fff;border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-md)}
+.tris-big{font-family:var(--font-display);font-size:46px;font-weight:600;line-height:1;color:var(--gold-400);font-variant-numeric:tabular-nums;margin-top:4px}
+.tris-big small{font-size:20px;color:#fff}
+.tris-sub{font-size:13px;color:var(--green-100);margin-top:6px}
+.tris-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.tbox{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-md);padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tbox span{font-size:11px;color:var(--green-200);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.tbox b{font-size:17px;line-height:1.2}
+.tbox i{font-size:12px;color:var(--green-100);font-style:normal}
+.ttab td,.ttab th{white-space:nowrap;font-variant-numeric:tabular-nums}
+.ttab tr.on td{background:var(--gold-100);font-weight:700}
+.fz-strip{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.fz-strip::-webkit-scrollbar{display:none}
+.fz{flex:0 0 132px;scroll-snap-align:start;text-align:left;display:flex;flex-direction:column;gap:2px}
+.fz-img{width:132px;height:132px;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(135deg,var(--green-700),var(--green-500));box-shadow:var(--shadow-sm);margin-bottom:6px}
+.fz-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.fz:active .fz-img img{transform:scale(1.05)}
+.fz b{font-size:14px;font-weight:600}
+.fz i{font-size:12px;color:var(--text-3)}
+.fz-big{margin:-4px -18px 14px;height:260px;background:linear-gradient(135deg,var(--green-800),var(--green-600));overflow:hidden}
+.fz-big img{width:100%;height:100%;object-fit:cover;display:block}
+#auth .auth-head{position:relative;overflow:hidden}
+#auth .auth-bg{position:absolute;inset:0;z-index:0}
+#auth .auth-bg img.ph{width:100%;height:100%;object-fit:cover;opacity:.9}
+#auth .auth-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,26,6,.15) 0%,rgba(11,26,6,.45) 55%,rgba(22,41,13,.95) 100%)}
+#auth .auth-head>*:not(.auth-bg){position:relative;z-index:1}
+/* Home a riquadri */
+.saluto{margin:2px 2px 14px}
+.saluto h2{font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.15}
+.saluto p{font-size:14px;color:var(--text-2);margin-top:2px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{position:relative;isolation:isolate;overflow:hidden;border-radius:var(--r-xl);min-height:168px;display:flex;flex-direction:column;justify-content:flex-end;
+  text-align:left;color:#fff;padding:14px;background:linear-gradient(135deg,var(--green-800),var(--green-600));box-shadow:var(--shadow-md);transition:transform .15s}
+.tile.grande{grid-column:1/-1;min-height:200px}
+.tile:active{transform:scale(.97)}
+.tile:focus-visible{outline:3px solid var(--gold-400);outline-offset:3px}
+.tile>img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .6s}
+.tile:hover>img.ph{transform:scale(1.04)}
+.tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,26,6,.05) 25%,rgba(11,26,6,.85) 100%)}
+.tile .ti-ic{width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.tile .ti-ic i{font-size:23px}
+.tile b{font-size:18px;font-weight:700;line-height:1.15;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.tile.grande b{font-size:22px}
+.tile small{font-size:12.5px;color:#E9F1DF;margin-top:3px;line-height:1.3;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.tile .bdg{align-self:flex-start;margin-bottom:8px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--red-700);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.tile .bdg.amber{background:var(--gold-500)}
+.tile .bdg.ok{background:rgba(22,41,13,.75);backdrop-filter:blur(4px)}
+.tile .ph-nome{top:12px;right:12px;left:auto}
+.tiles.anima .tile{animation:tileIn .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tileIn{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tiles.anima .tile{animation:none}}
+@media (min-width:700px){.tiles{grid-template-columns:repeat(3,1fr)}.tile.grande{grid-column:span 2}}
+.riga-foto{min-height:96px;align-items:flex-end;border:none;border-radius:var(--r-md);padding:12px 12px 12px 14px}
+.riga-foto::after{background:linear-gradient(90deg,rgba(11,26,6,.88) 0%,rgba(11,26,6,.55) 55%,rgba(11,26,6,.15) 100%)}
+.riga-foto .sp-nm{font-size:16px;font-weight:700;color:#fff}
+.riga-foto .sp-dt,.riga-foto .sp-nt{color:#E9F1DF}
+.riga-foto.st-grey{opacity:.8}
+.riga-foto .pill{box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.lim{display:flex;gap:12px;align-items:flex-start;border-radius:var(--r-md);padding:12px 14px;margin-top:12px;font-size:14px}
+.lim>i{font-size:24px;flex-shrink:0}
+.lim span{font-size:12px;opacity:.85}
+.lim-ok{background:var(--green-100);color:var(--green-700)}
+.lim-no{background:var(--red-100);color:var(--red-700)}
+.onb{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;background:var(--green-900);color:#fff;isolation:isolate;animation:fadebg .3s}
+.onb>img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;animation:onbZoom 8s ease-out both}
+@keyframes onbZoom{from{transform:scale(1.08)}to{transform:none}}
+.onb::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,26,6,.1) 0%,rgba(11,26,6,.55) 45%,rgba(11,26,6,.95) 100%)}
+.onb-c{width:100%;max-width:560px;padding:24px 24px calc(28px + var(--safe-b))}
+.onb-s{width:64px;height:64px;margin-bottom:14px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.4))}
+.onb h2{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.1;text-wrap:balance}
+.onb p{font-size:16px;color:var(--green-100);margin-top:10px;line-height:1.5;max-width:42ch}
+.onb-dots{display:flex;gap:6px;margin:22px 0 16px}
+.onb-dots span{width:8px;height:8px;border-radius:9px;background:rgba(255,255,255,.35);transition:width .2s}
+.onb-dots span.on{width:24px;background:var(--gold-400)}
+.onb-b{display:flex;justify-content:space-between;align-items:center}
+@media (prefers-reduced-motion:reduce){.onb>img.ph{animation:none}}
+/* Finestre */
+.sheet-bg{position:fixed;inset:0;background:rgba(11,26,6,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fadebg .2s}
+@keyframes fadebg{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:var(--r-xl) var(--r-xl) 0 0;padding:8px 18px calc(22px + var(--safe-b));max-height:92dvh;overflow-y:auto;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px)}to{transform:none}}
+.sheet .grab{width:42px;height:5px;border-radius:9px;background:var(--surface3);margin:4px auto 14px}
+.sheet h3{font-family:var(--font-display);font-size:20px;font-weight:600;margin-bottom:4px}
+.sheet .sub{margin-bottom:14px}
+.sheet .foot{display:flex;gap:10px;margin-top:16px}
+.sheet .foot .btn{flex:1}
+@media(min-width:700px){.sheet-bg{align-items:center}.sheet{border-radius:var(--r-xl)}}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + var(--safe-b));transform:translateX(-50%);background:var(--green-900);color:#fff;padding:11px 16px;border-radius:999px;font-size:14px;z-index:60;box-shadow:var(--shadow-md);max-width:calc(100% - 32px);text-align:center;animation:fade .2s}
+.install{display:flex;gap:12px;align-items:center;background:var(--gold-100);border:1px solid #EBD3A8;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:14px;color:var(--gold-700);font-size:13px}
+.install i{font-size:24px}
+.install .sp{flex:1}
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text-3);padding:30px 0;font-size:14px}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:6px;background:var(--surface2);border-radius:9px;overflow:hidden;margin-top:8px}
+.progress div{height:100%;background:var(--green-500);width:0;transition:width .2s}
+table.mini{width:100%;border-collapse:collapse;font-size:13px}
+table.mini th{text-align:left;color:var(--text-3);font-weight:600;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--border)}
+table.mini td{padding:8px 4px;border-bottom:1px solid var(--border-light);vertical-align:top}
+.stat{display:flex;gap:10px}
+.stat .card{flex:1;text-align:center;padding:12px;display:flex;flex-direction:column;justify-content:flex-start;margin-top:0}
+.stat b{display:block;font-family:var(--font-display);font-size:26px;color:var(--green-700)}
+.stat span{font-size:12px;color:var(--text-3)}
+.legal{font-size:13px;color:var(--text-2)}
+.legal h4{font-size:14px;color:var(--text);margin:14px 0 4px}
+.legal p,.legal li{margin-bottom:6px}
+.legal ul{padding-left:18px}
+</style>
+</head>
+<body>
+
+<!-- ═════════════ ACCESSO / REGISTRAZIONE ═════════════ -->
+<section id="auth" class="hidden">
+  <div class="auth-head">
+    <div class="auth-bg" data-fauna="fagiano" data-w="1000"><img class="ph" alt=""></div>
+    <img src="simbolo.svg" alt="" onerror="this.style.display='none'">
+    <h1 id="app-nome">SFV</h1>
+    <p id="app-sotto">L'app gratuita della Scuola Faunistica Venatoria</p>
+  </div>
+  <div class="auth-card">
+    <div class="tabs-auth">
+      <button id="tab-login" class="on" onclick="authTab('login')">Accedi</button>
+      <button id="tab-reg" onclick="authTab('reg')">Registrati</button>
+    </div>
+    <div id="auth-msg"></div>
+
+    <form id="f-login" onsubmit="doLogin(event)">
+      <div class="field"><label for="l-email">Email</label><input class="input" id="l-email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="l-pwd">Password</label><input class="input" id="l-pwd" type="password" autocomplete="current-password" required></div>
+      <button class="btn btn-primary" id="b-login" type="submit"><i class="ti ti-login"></i> Accedi</button>
+      <p style="text-align:center;margin-top:14px"><button type="button" class="link" onclick="doReset()">Password dimenticata?</button></p>
+    </form>
+
+    <form id="f-reg" class="hidden" onsubmit="doRegister(event)">
+      <div class="row2">
+        <div class="field"><label for="r-nome">Nome</label><input class="input" id="r-nome" autocomplete="given-name" required maxlength="60"></div>
+        <div class="field"><label for="r-cognome">Cognome</label><input class="input" id="r-cognome" autocomplete="family-name" required maxlength="60"></div>
+      </div>
+      <div class="field"><label for="r-email">Email</label><input class="input" id="r-email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="r-pwd">Password (almeno 8 caratteri)</label><input class="input" id="r-pwd" type="password" autocomplete="new-password" minlength="8" required></div>
+      <label class="check"><input type="checkbox" id="r-privacy" required><span>Ho letto l'<button type="button" class="link" onclick="openPrivacy()">informativa privacy</button> e accetto che nome, cognome ed email siano conservati dalla Scuola per gestire il mio account.</span></label>
+      <label class="check"><input type="checkbox" id="r-news"><span>Accetto di ricevere via email le comunicazioni della <b>Scuola Faunistica Venatoria</b> su iniziative, corsi, eventi e attività per il mondo venatorio, anche del suo partner <b>Cal Resana Outdoor</b>. È la condizione per usare gratis l'app: posso revocarla quando voglio dal profilo.</span></label>
+      <button class="btn btn-primary" id="b-reg" type="submit"><i class="ti ti-user-plus"></i> Crea il mio account</button>
+    </form>
+  </div>
+  <p class="auth-foot">Gratuita per tutti i cacciatori, in cambio delle comunicazioni della Scuola via email. Le scadenze dei tuoi documenti restano solo sul tuo telefono.</p>
+  <div class="partners">
+    <a href="https://www.scuolafaunisticavenatoria.it" target="_blank" rel="noopener" aria-label="Sito della Scuola Faunistica Venatoria"><img src="logo-scuola.jpg" alt="Scuola Faunistica Venatoria" class="pl-scuola" width="640" height="257"></a>
+    <a href="https://cal-resana-outdoor.vercel.app/" target="_blank" rel="noopener" aria-label="Sito di Cal Resana Outdoor"><img src="logo-calresana.png" alt="Cal Resana Outdoor" class="pl-cal" width="360" height="315"></a>
+  </div>
+</section>
+
+<!-- ═════════════ APP ═════════════ -->
+<section id="app" class="hidden">
+  <header class="topbar">
+    <div class="wrap">
+      <button class="ibtn hidden" id="btn-home" onclick="go('home')" aria-label="Torna alla Home"><i class="ti ti-arrow-left"></i></button>
+      <img src="simbolo.svg" alt="" onclick="go('home')" style="cursor:pointer" onerror="this.style.display='none'">
+      <div><div class="t1" id="app-nome2">SFV</div><div class="t2" id="top-sub">Scuola Faunistica Venatoria</div></div>
+      <div class="sp"></div>
+      <button class="ibtn" onclick="go('profilo')" aria-label="Profilo"><i class="ti ti-user"></i></button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- HOME -->
+    <div class="view" id="v-home">
+      <div id="install-box"></div>
+      <div class="saluto"><h2 id="hello">Buongiorno</h2><p id="hello-p"></p></div>
+      <div id="admin-entry"></div>
+      <div class="tiles" id="home-tiles"></div>
+      <div id="home-scad" class="hidden"></div>
+      <div id="home-cal" class="hidden"></div>
+
+      <div data-solo="nessuna"><h3 class="sec">Documenti</h3>
+      <div class="cat-grid" id="cat-grid"></div>
+
+      <h3 class="sec">Ultimi pubblicati <button class="link" onclick="go('docs')">Vedi tutti</button></h3></div>
+      <div data-solo="nessuna" id="home-recent"><div class="loading"><i class="ti ti-loader-2 spin"></i> Caricamento…</div></div>
+
+    </div>
+
+    <!-- CALENDARIO -->
+    <div class="view" id="v-cal">
+      <div class="hero" data-fauna="germano"><img class="ph" alt=""><span class="ph-nome"></span><div class="hero-txt"><h2 id="cal-h2">Calendario venatorio</h2><p id="cal-p"></p></div></div>
+      <div id="cal-season" data-solo="pianura" style="margin-bottom:10px"></div>
+      <div class="tabs-auth" data-solo="nessuna" style="margin-bottom:14px"><button id="ct-reg" class="on" onclick="calTab('reg')">Regionale</button><button id="ct-alpi" onclick="calTab('alpi')">Zona Alpi</button></div>
+      <div id="cal-pane-reg"><div class="chips" id="cal-chips"></div><div id="cal-reg"><div class="loading"><i class="ti ti-loader-2 spin"></i> Caricamento…</div></div></div>
+      <div id="cal-pane-alpi" class="hidden"><div id="cal-alpi"></div></div>
+    </div>
+
+    <!-- BIOMETRIA -->
+    <div class="view" id="v-bio">
+      <div class="hero" id="bio-hero"><span class="ph-nome"></span><div class="hero-txt"><h2 id="bio-hero-t">Biometria</h2><p id="bio-hero-p"></p></div></div>
+      <button class="link hidden" id="bio-back" style="margin:-4px 0 12px;display:inline-flex;align-items:center;gap:4px" onclick="chiudiBioSpecie()"><i class="ti ti-arrow-left"></i> Tutte le specie</button>
+      <div id="bio-body"><div class="loading"><i class="ti ti-loader-2 spin"></i> Caricamento…</div></div>
+    </div>
+
+    <!-- DISTANZA DI TIRO -->
+    <div class="view" id="v-tiro">
+      <div class="hero" data-fauna="cervo"><img class="ph" alt=""><span class="ph-nome"></span><div class="hero-txt"><h2>Distanza reale di tiro</h2><p>Calcolo balistico con angolo di sito, vento, temperatura e quota.</p></div></div>
+      <div id="tiro-body"></div>
+    </div>
+
+    <!-- DOCUMENTI -->
+    <div class="view" id="v-docs">
+      <div class="hero" data-fauna="starna"><img class="ph" alt=""><span class="ph-nome"></span><div class="hero-txt"><h2>Documenti</h2><p>Schede, moduli, delibere e regolamenti sempre aggiornati.</p></div></div>
+      <div class="search"><i class="ti ti-search"></i><input class="input" id="q" type="search" placeholder="Cerca un documento…" oninput="renderDocs()"></div>
+      <div class="chips" id="chips"></div>
+      <div id="doc-list"><div class="loading"><i class="ti ti-loader-2 spin"></i> Caricamento…</div></div>
+    </div>
+
+    <!-- SCADENZE -->
+    <div class="view" id="v-scad">
+      <div class="hero" data-fauna="lepre"><img class="ph" alt=""><span class="ph-nome"></span><div class="hero-txt"><h2>Le mie scadenze</h2><p>Inserisci le date dei tuoi documenti, allega una copia e aggiungile al calendario del telefono.</p></div></div>
+      <div class="privacy-note"><i class="ti ti-shield-lock"></i><div>Date e copie dei documenti sono salvate <b>solo su questo telefono</b>: non vengono inviate alla Scuola né a nessun altro. Se cambi telefono usa “Salva copia” nel profilo.</div></div>
+      <button class="btn btn-primary" onclick="editScad()"><i class="ti ti-plus"></i> Aggiungi una scadenza</button>
+      <div id="scad-list" style="margin-top:16px"></div>
+      <div id="scad-all" class="hidden" style="margin-top:6px">
+        <button class="btn btn-soft" style="width:100%" onclick="calAll()"><i class="ti ti-calendar-plus"></i> Metti tutte nel calendario (file unico)</button>
+      </div>
+    </div>
+
+    <!-- PROFILO -->
+    <div class="view" id="v-profilo">
+      <div class="card"><div class="prof-head"><div class="avatar" id="p-avatar">?</div><div><div style="font-weight:700;font-size:17px" id="p-name"></div><div style="font-size:13px;color:var(--text-2)" id="p-email"></div><div id="p-verify"></div></div></div></div>
+
+      <div id="p-admin" class="hidden"><h3 class="sec">Amministratore</h3><div class="card" style="padding:4px 14px"><button class="list-row" onclick="go('admin')"><i class="ti ti-settings"></i><span class="sp">Gestione documenti, calendari e iscritti</span><i class="ti ti-chevron-right chev"></i></button></div></div>
+
+      <h3 class="sec">Dati sul telefono</h3>
+      <div class="card" style="padding:4px 14px">
+        <button class="list-row" onclick="exportBackup()"><i class="ti ti-download"></i><span class="sp">Salva copia (scadenze, copie e comprensorio)</span><i class="ti ti-chevron-right chev"></i></button>
+        <button class="list-row" onclick="document.getElementById('imp-file').click()"><i class="ti ti-upload"></i><span class="sp">Ripristina da una copia</span><i class="ti ti-chevron-right chev"></i></button>
+        <input type="file" id="imp-file" accept=".json,application/json" class="hidden" onchange="importBackup(this)">
+      </div>
+
+      <h3 class="sec">Account</h3>
+      <div class="card" style="padding:4px 14px">
+        <button class="list-row" onclick="toggleNotifiche()"><i class="ti ti-bell-ringing"></i><span class="sp">Notifiche delle scadenze</span><span id="p-notif" style="font-size:13px;color:var(--text-3)"></span></button>
+        <button class="list-row" onclick="toggleNews()"><i class="ti ti-mail"></i><span class="sp">Comunicazioni della Scuola</span><span id="p-news" style="font-size:13px;color:var(--text-3)"></span></button>
+        <button class="list-row" onclick="benvenuto(true)"><i class="ti ti-info-circle"></i><span class="sp">Guida rapida</span><i class="ti ti-chevron-right chev"></i></button>
+        <button class="list-row" onclick="apriCrediti()"><i class="ti ti-photo"></i><span class="sp">Crediti fotografici</span><i class="ti ti-chevron-right chev"></i></button>
+        <button class="list-row" onclick="openPrivacy()"><i class="ti ti-shield-check"></i><span class="sp">Informativa privacy</span><i class="ti ti-chevron-right chev"></i></button>
+        <button class="list-row" onclick="doLogout()"><i class="ti ti-logout"></i><span class="sp">Esci</span><i class="ti ti-chevron-right chev"></i></button>
+        <button class="list-row" onclick="askDelete()" style="color:var(--red-700)"><i class="ti ti-trash" style="color:var(--red-700)"></i><span class="sp">Elimina il mio account</span></button>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--text-3);margin-top:20px">SFV Cacciatore · Scuola Faunistica Venatoria<br>App gratuita</p>
+    </div>
+
+    <!-- GESTIONE (solo amministratore) -->
+    <div class="view" id="v-admin">
+      <h2 class="title">Gestione</h2>
+      <p class="sub" id="adm-sub"></p>
+      <div class="stat"><div class="card" data-solo="nessuna"><b id="st-docs">–</b><span>documenti</span></div><div class="card"><b id="st-users">–</b><span>cacciatori iscritti</span></div><div class="card"><b id="st-app">–</b><span>usano questa app</span></div><div class="card"><b id="st-news">–</b><span>consenso notizie</span></div></div>
+      <div data-solo="montagna"><h3 class="sec">Limiti per il tiro</h3>
+      <div class="card" style="margin-bottom:10px"><div id="adm-lim"></div><button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="editLimiti()"><i class="ti ti-pencil"></i> Imposta i limiti per specie</button></div></div>
+      <div data-solo="montagna"><h3 class="sec">Biometria</h3>
+      <button class="btn btn-soft" onclick="bioSpecie=null;go('bio')"><i class="ti ti-ruler-measure"></i> Gestisci le schede biometriche</button>
+      <p style="font-size:12px;color:var(--text-3);margin:6px 2px 4px">Carichi le schede dalla pagina Biometria: per ognuna decidi se è visibile e se si può scaricare.</p></div>
+
+      <div data-solo="pianura"><h3 class="sec">Calendari venatori regionali</h3>
+      <div class="card" style="font-size:14px;margin-bottom:10px"><div id="adm-cal-stat"></div><p style="font-size:12px;color:var(--text-3);margin-top:4px">Per ogni regione basta il collegamento ufficiale o il PDF. Ogni anno aggiorni solo quelli cambiati.</p>
+        <button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="confermaSuggeriti()"><i class="ti ti-wand"></i> Inserisci i collegamenti già verificati</button></div>
+      <div class="card" id="adm-cal" style="padding:4px 14px"></div></div>
+      <div data-solo="nessuna"><h3 class="sec">Documenti</h3>
+      <button class="btn btn-primary" onclick="editDoc()"><i class="ti ti-file-plus"></i> Pubblica un documento</button>
+      <h3 class="sec">Documenti pubblicati</h3>
+      <div id="adm-docs"></div></div>
+      <h3 class="sec">Cacciatori iscritti <button class="link" onclick="exportUsers()">Scarica elenco</button></h3>
+      <div class="card" id="adm-users"><div class="loading"><i class="ti ti-loader-2 spin"></i></div></div>
+    </div>
+
+    <div class="partners">
+    <a href="https://www.scuolafaunisticavenatoria.it" target="_blank" rel="noopener" aria-label="Sito della Scuola Faunistica Venatoria"><img src="logo-scuola.jpg" alt="Scuola Faunistica Venatoria" class="pl-scuola" width="640" height="257"></a>
+    <a href="https://cal-resana-outdoor.vercel.app/" target="_blank" rel="noopener" aria-label="Sito di Cal Resana Outdoor"><img src="logo-calresana.png" alt="Cal Resana Outdoor" class="pl-cal" width="360" height="315"></a>
+  </div>
+  </main>
+
+</section>
+
+<div id="boot" class="loading" style="min-height:100dvh"><i class="ti ti-loader-2 spin"></i> Avvio…</div>
+<div id="layer"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   SFV Cacciatore — app gratuita per il mondo venatorio
+   - Accesso e registrazione con Firebase Authentication
+     (lo stesso progetto della piattaforma corsi)
+   - Documenti: collezione Firestore "app_documenti",
+     file su Firebase Storage nella cartella "app_documenti/"
+   - Profili: collezione "cacciatori" (solo nome, cognome, email)
+   - Scadenze: SOLO sul telefono (localStorage), mai inviate
+═══════════════════════════════════════════════════════════ */
+
+/* ───────── Le due app: Montagna e Pianura ─────────
+   Stesso codice; la variante è scritta in cima alla pagina (window.SFV_APP). */
+const APP = window.SFV_APP==='pianura' ? 'pianura' : 'montagna';
+const VAR = {
+  montagna:{ nome:'SFV Montagna', sotto:"L'app gratuita per il cacciatore di montagna",
+    hello:'Comprensorio, biometria, tiro e scadenze dei tuoi documenti.',
+    calH2:'Il mio comprensorio alpino', calP:'Specie, periodi e regole interne del tuo comprensorio.',
+    adm:'Pubblica le schede biometriche e vedi chi usa l\'app.', fotoCal:'fagiano-monte',
+    fauna:['camoscio','muflone','stambecco','cervo','capriolo','daino','cinghiale','fagiano-monte','gallo-cedrone','pernice-bianca','francolino','coturnice'] },
+  pianura:{ nome:'SFV Pianura', sotto:"L'app gratuita per il cacciatore di pianura",
+    hello:'Il calendario venatorio della tua regione e le scadenze dei tuoi documenti.',
+    calH2:'Calendario venatorio', calP:'Il calendario ufficiale della tua regione.',
+    adm:'Aggiorna i calendari regionali e vedi chi usa l\'app.', fotoCal:'fagiano',
+    fauna:['volpe','lepre','fagiano','starna','germano','gallinella','beccaccia'] },
+}[APP];
+(function applicaVariante(){
+  document.querySelectorAll('[data-solo]').forEach(el=>{ if(el.dataset.solo!==APP) el.classList.add('hidden'); });
+  const t=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  t('app-nome',VAR.nome); t('app-nome2',VAR.nome); t('app-sotto',VAR.sotto); t('hello-p',VAR.hello);
+  t('cal-h2',VAR.calH2); t('cal-p',VAR.calP); t('adm-sub',VAR.adm);
+})();
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCH0NoAaZztDWvHUrEhb5D4QUjQE4om9Pk",
+  authDomain:        "scuola-faunistica-venatoria.firebaseapp.com",
+  projectId:         "scuola-faunistica-venatoria",
+  storageBucket:     "scuola-faunistica-venatoria.firebasestorage.app",
+};
+
+const CATEGORIE = [
+  {id:'schede',      nome:'Schede abbattimento ungulati', icon:'ti-clipboard-list', fauna:'camoscio'},
+  {id:'moduli',      nome:'Moduli',                       icon:'ti-forms',          fauna:'volpe'},
+  {id:'delibere',    nome:'Delibere',                     icon:'ti-gavel',          fauna:'starna'},
+  {id:'regolamenti', nome:'Regolamenti',                  icon:'ti-book',           fauna:'fagiano-monte'},
+  {id:'calendari',   nome:'Calendari venatori',           icon:'ti-calendar-event', fauna:'pernice-bianca'},
+  {id:'altro',       nome:'Altro',                        icon:'ti-file-text',      fauna:'gallinella'},
+];
+
+const TIPI_SCADENZA = [
+  'Licenza di porto di fucile uso caccia',
+  'Certificato medico (rinnovo porto d\'armi)',
+  'Assicurazione RC caccia',
+  'Tassa di concessione governativa',
+  'Tassa regionale',
+  'Quota ATC / Comprensorio alpino',
+  'Tesserino venatorio regionale',
+  'Abilitazione caccia di selezione',
+];
+
+const LS_SCAD = 'sfv_scadenze_v1';
+const LS_DOCS = 'sfv_docs_cache_v1';
+
+let auth=null, db=null, storage=null;
+let me=null, profilo=null, isAdmin=false;
+let DOCS=[], catSel='tutte', _registrando=false;
+
+/* ───────── Utilità ───────── */
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2800);}
+function msg(el,type,text){$(el).innerHTML=text?`<div class="msg ${type}"><i class="ti ${type==='err'?'ti-alert-circle':'ti-circle-check'}"></i><span>${esc(text)}</span></div>`:'';}
+function fmtData(iso){if(!iso)return'';const [y,m,d]=iso.split('-');return `${d}/${m}/${y}`;}
+function oggiISO(){const d=new Date();return isoDi(d);}
+function isoDi(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function giorniA(iso){const [y,m,d]=iso.split('-').map(Number);const t=new Date(y,m-1,d);const o=new Date();o.setHours(0,0,0,0);return Math.round((t-o)/86400000);}
+function addGiorni(iso,n){const [y,m,d]=iso.split('-').map(Number);const t=new Date(y,m-1,d);t.setDate(t.getDate()+n);return isoDi(t);}
+function catDi(id){return CATEGORIE.find(c=>c.id===id)||CATEGORIE[CATEGORIE.length-1];}
+function tsMs(v){if(!v)return 0;if(typeof v==='number')return v;if(v.toMillis)return v.toMillis();if(v.seconds)return v.seconds*1000;return 0;}
+function erroreIT(e){
+  const c=(e&&e.code)||'';
+  const m={
+    'auth/invalid-email':'L\'indirizzo email non è valido.',
+    'auth/email-already-in-use':'Esiste già un account con questa email. Prova ad accedere o a recuperare la password.',
+    'auth/weak-password':'La password è troppo debole: usa almeno 8 caratteri.',
+    'auth/user-not-found':'Email o password non corretti.',
+    'auth/wrong-password':'Email o password non corretti.',
+    'auth/invalid-credential':'Email o password non corretti.',
+    'auth/invalid-login-credentials':'Email o password non corretti.',
+    'auth/too-many-requests':'Troppi tentativi. Riprova tra qualche minuto.',
+    'auth/network-request-failed':'Connessione assente. Controlla la rete e riprova.',
+    'auth/requires-recent-login':'Per sicurezza esci, rientra e riprova.',
+    'auth/operation-not-allowed':'La registrazione con email non è attiva. Contatta la Scuola.',
+    'permission-denied':'Operazione non permessa. Contatta la Scuola.',
+    'storage/unauthorized':'Caricamento non permesso: controlla le regole di Storage.',
+  };
+  // per l'amministratore: spiega che mancano le regole di Firebase
+  if(isAdmin&&(c==='permission-denied'||c==='storage/unauthorized'))
+    return c==='permission-denied'?'Firebase non permette ancora il salvataggio: vanno aggiunte le regole del database (istruzioni, punto 2).':'Firebase non permette ancora di caricare file: vanno aggiunte le regole di Storage (istruzioni, punto 3).';
+  return m[c]||('Si è verificato un errore'+(c?` (${c})`:'')+'. Riprova.');
+}
+
+/* ───────── Finestre ───────── */
+function openSheet(html){
+  $('layer').innerHTML=`<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;
+}
+function closeSheet(){$('layer').innerHTML='';}
+
+/* ───────── Avvio ───────── */
+(function init(){
+  if(typeof firebase==='undefined'){
+    $('boot').innerHTML='<div class="empty"><i class="ti ti-wifi-off"></i><b>Connessione assente</b>Collegati a internet per il primo avvio dell\'app.</div>';
+    return;
+  }
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth=firebase.auth(); auth.languageCode='it';
+  db=firebase.firestore();
+  try{ db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(_){}
+  try{ storage=firebase.storage(); }catch(_){}
+
+  try{ preparaFotoAccesso(); }catch(_){}
+  auth.onAuthStateChanged(async u=>{
+    $('boot').classList.add('hidden');
+    if(!u){ me=null; profilo=null; isAdmin=false; $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); return; }
+    me=u;
+    if(_registrando) return;   // il profilo lo scrive doRegister
+    await caricaProfilo();
+    $('auth').classList.add('hidden'); $('app').classList.remove('hidden');
+    avviaApp();
+    if(!profilo && !isAdmin) completaProfilo();
+    else if(profilo && !isAdmin && profilo.newsletter!==true) chiediConsenso();
+  });
+
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+
+async function caricaProfilo(){
+  profilo=null; isAdmin=false;
+  try{ const s=await db.collection('cacciatori').doc(me.uid).get(); if(s.exists) profilo=s.data(); }catch(_){}
+  try{ const a=await db.collection('admins').doc(me.uid).get(); isAdmin=a.exists; }catch(_){ isAdmin=false; }
+  // segna da quale app (Montagna/Pianura) entra il cacciatore
+  if(profilo&&!(profilo.apps||[]).includes(APP)&&firebase.firestore.FieldValue.arrayUnion){ try{ await db.collection('cacciatori').doc(me.uid).set({apps:firebase.firestore.FieldValue.arrayUnion(APP)},{merge:true}); }catch(_){} }
+}
+
+/* Profilo mancante: succede a chi ha già un account della piattaforma corsi
+   (stessa email) o a chi ha interrotto la registrazione. Gli chiediamo
+   nome, cognome e il consenso privacy prima di usare l'app. */
+function completaProfilo(){
+  const parts=(me.displayName||'').split(' ');
+  openSheet(`<h3>Completa il tuo profilo</h3><p class="sub">Un ultimo passo per usare l'app.</p><div id="cp-msg"></div>
+    <div class="row2"><div class="field"><label for="cp-nome">Nome</label><input class="input" id="cp-nome" maxlength="60" value="${esc(parts[0]||'')}"></div><div class="field"><label for="cp-cognome">Cognome</label><input class="input" id="cp-cognome" maxlength="60" value="${esc(parts.slice(1).join(' '))}"></div></div>
+    <label class="check"><input type="checkbox" id="cp-privacy"><span>Ho letto l'<button type="button" class="link" onclick="window._cpRiapri=true;openPrivacy()">informativa privacy</button> e accetto che nome, cognome ed email siano conservati dalla Scuola per gestire il mio account.</span></label>
+    <label class="check"><input type="checkbox" id="cp-news"><span>Accetto di ricevere via email le comunicazioni della <b>Scuola Faunistica Venatoria</b> su iniziative, corsi, eventi e attività per il mondo venatorio, anche del suo partner <b>Cal Resana Outdoor</b>. È la condizione per usare gratis l'app: posso revocarla quando voglio dal profilo.</span></label>
+    <div class="foot"><button class="btn btn-ghost" onclick="doLogout()">Esci</button><button class="btn btn-primary" id="b-cp" onclick="salvaProfilo()"><i class="ti ti-check"></i> Continua</button></div>`);
+  // la finestra non si chiude toccando fuori
+  const bg=document.querySelector('.sheet-bg'); if(bg) bg.onclick=null;
+}
+function chiediConsenso(){
+  openSheet(`<h3>Comunicazioni della Scuola</h3><p class="sub">L'app è gratuita: in cambio ricevi via email le comunicazioni della Scuola Faunistica Venatoria su iniziative, corsi, eventi e attività per il mondo venatorio, anche del suo partner Cal Resana Outdoor. Puoi revocare il consenso quando vuoi dal profilo, oppure eliminare l'account.</p><div id="cc-msg"></div>
+    <div class="foot"><button class="btn btn-ghost" onclick="doLogout()">Esci</button><button class="btn btn-primary" id="b-cc" onclick="daiConsenso()"><i class="ti ti-check"></i> Accetto e continuo</button></div>`);
+  const bg=document.querySelector('.sheet-bg'); if(bg) bg.onclick=null;
+}
+async function daiConsenso(){
+  $('b-cc').disabled=true;
+  try{ await db.collection('cacciatori').doc(me.uid).set({newsletter:true,consensoComunicazioniIl:new Date().toISOString()},{merge:true}); profilo.newsletter=true; renderProfilo(); closeSheet(); }
+  catch(e){ msg('cc-msg','err',erroreIT(e)); $('b-cc').disabled=false; }
+}
+async function salvaProfilo(){
+  const nome=$('cp-nome').value.trim(), cognome=$('cp-cognome').value.trim();
+  if(!nome||!cognome){ msg('cp-msg','err','Inserisci nome e cognome.'); return; }
+  if(!$('cp-privacy').checked){ msg('cp-msg','err','Per usare l\'app devi accettare l\'informativa privacy.'); return; }
+  if(!$('cp-news').checked){ msg('cp-msg','err','L\'app è gratuita in cambio delle comunicazioni della Scuola: spunta anche la seconda casella.'); return; }
+  $('b-cp').disabled=true;
+  const rec={nome,cognome,email:me.email,privacyAccettata:true,newsletter:true,consensoComunicazioniIl:new Date().toISOString(),apps:[APP],creatoIl:firebase.firestore.FieldValue.serverTimestamp()};
+  try{ await db.collection('cacciatori').doc(me.uid).set(rec); profilo=rec; closeSheet(); avviaApp(); }
+  catch(e){ msg('cp-msg','err',erroreIT(e)); $('b-cp').disabled=false; }
+}
+
+function avviaApp(){
+  const nome = isAdmin ? 'Amministratore' : (profilo&&profilo.nome)||'';
+  const h=new Date().getHours();
+  $('hello').textContent=(h<13?'Buongiorno':h<18?'Buon pomeriggio':'Buonasera')+(nome?', '+nome:'');
+  $('admin-entry').innerHTML=false?`<button class="admin-card" onclick="go('admin')"><i class="ti ti-settings"></i><div style="flex:1"><b>Gestione</b><br><span style="font-size:13px">${esc(VAR.adm)}</span></div><i class="ti ti-chevron-right"></i></button>`:'';
+  $('p-admin').classList.toggle('hidden',!isAdmin);
+  renderCategorie(); renderChips(); renderScadenze(); renderProfilo(); renderInstall(); preparaFoto();
+  renderAlpi(); notifControlla(); setTimeout(()=>benvenuto(),400);
+  if(APP==='montagna'){ caricaBiometria(); caricaLimiti(); calTab('alpi'); } else { caricaCalendario(); calTab('reg'); }
+  { const im=document.querySelector('[data-bio-home]'); if(im) im.src=fotoUrl(faunaDi('stambecco'),800); }
+  { const im=document.querySelector('[data-tiro-home]'); if(im) im.src=fotoUrl(faunaDi('cervo'),800); }
+  const v=(location.hash||'').replace('#','');
+  const ok=APP==='montagna'?['home','cal','bio','tiro','scad','profilo','admin']:['home','cal','scad','profilo','admin'];
+  go(ok.includes(v)&&(v!=='admin'||isAdmin)?v:'home');
+}
+
+function go(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  $('v-'+v).classList.add('on');
+  $('btn-home').classList.toggle('hidden',v==='home');
+  if(v==='home') renderHomeTiles(true);
+  history.replaceState(null,'','#'+v);
+  window.scrollTo(0,0);
+  if(v==='admin') caricaAdmin();
+  if(v==='cal'){ renderCal(); renderAlpi(); }
+  if(v==='bio'){ renderBio(); }
+  if(v==='tiro'){ renderTiro(); }
+}
+function renderHomeTiles(anima){
+  const el=$('home-tiles'); if(!el||!me) return;
+  const l=leggiScad(), urg=l.filter(s=>giorniA(s.scadenza)<=30), scad=l.filter(s=>giorniA(s.scadenza)<0||giorniA(s.scadenza)===0);
+  const badgeScad=urg.length?`<span class="bdg ${scad.length?'':'amber'}">${scad.length?(scad.length===1?'1 scaduto':scad.length+' scaduti'):(urg.length===1?'1 in scadenza':urg.length+' in scadenza')}</span>`:(l.length?'<span class="bdg ok">In regola</span>':'');
+  const sScad=l.length?(urg.length?urg.slice(0,2).map(x=>x.nome).join(', '):`${l.length} document${l.length===1?'o':'i'} sotto controllo`):'Porto d\'armi, assicurazione, tasse…';
+  let T=[];
+  if(APP==='montagna'){
+    const alpi=leggiAlpi(), ap=alpi?(alpi.righe||[]).filter(r=>statoPeriodo(r.dal,r.al).aperta):[];
+    const nb=BIO.filter(b=>b.visibile).length;
+    T=[
+      {v:'cal',  t:alpi?alpi.nome:'Il mio comprensorio', s:alpi?(ap.length?`${ap.length} specie aperte oggi`:'Nessuna specie aperta oggi'):'Calendario interno e regole', f:'pernice-bianca', i:'ti-mountain', g:1,
+       b:alpi&&ap.length?`<span class="bdg ok">Aperta: ${ap.map(r=>r.specie).slice(0,2).join(', ')}</span>`:''},
+      {v:'scad', t:'Le mie scadenze', s:sScad, f:'capriolo', i:'ti-bell', b:badgeScad},
+      {v:'bio',  t:'Biometria', s:nb?`${nb} sched${nb===1?'a':'e'} disponibil${nb===1?'e':'i'}`:'Ungulati e tetraonidi', f:'stambecco', i:'ti-ruler-measure'},
+      {v:'tiro', t:'Distanza di tiro', s:'Caduta, clic e vento', f:'cervo', i:'ti-target-arrow'},
+      {v:'profilo', t:'Profilo', s:'Account e copia dei dati', f:'camoscio', i:'ti-user'},
+    ];
+  }else{
+    const mia=miaRegione(), c=mia?CAL[mia]:null;
+    T=[
+      {v:'cal',  t:'Calendario venatorio', s:mia?(c?`${regNome(mia)} · stagione ${c.stagione||''}`:`${regNome(mia)} · da cercare`):'Scegli la tua regione', f:'fagiano', i:'ti-calendar-event', g:1},
+      {v:'scad', t:'Le mie scadenze', s:sScad, f:'lepre', i:'ti-bell', b:badgeScad},
+      {v:'profilo', t:'Profilo', s:'Account e copia dei dati', f:'volpe', i:'ti-user'},
+    ];
+  }
+  if(isAdmin) T.push({v:'admin', t:'Gestione', s:APP==='montagna'?'Schede biometriche e iscritti':'Calendari e iscritti', f:APP==='montagna'?'muflone':'starna', i:'ti-settings'});
+  // con un numero dispari di riquadri piccoli, l'ultimo occupa tutta la riga
+  const piccoli=T.filter(x=>!x.g).length; if(piccoli%2) T[T.length-1].g=2;
+  el.innerHTML=T.map((x,k)=>{const fa=faunaDi(x.f);
+    return `<button class="tile ${x.g?'grande':''}" style="animation-delay:${k*70}ms" onclick="${x.v==='bio'?'bioSpecie=null;':''}go('${x.v}')"><img class="ph" src="${fotoUrl(fa,x.g?900:600)}" alt="" onerror="this.remove()"><span class="ph-nome">${esc(fa.nome)}</span><span class="ti-ic"><i class="ti ${x.i}"></i></span>${x.b||''}<b>${esc(x.t)}</b><small>${esc(x.s)}</small></button>`;}).join('');
+  el.classList.toggle('anima',!!anima);
+  if(anima){ clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('anima'),900); }
+}
+function calTab(t){ $('ct-reg').classList.toggle('on',t==='reg'); $('ct-alpi').classList.toggle('on',t==='alpi'); $('cal-pane-reg').classList.toggle('hidden',t!=='reg'); $('cal-pane-alpi').classList.toggle('hidden',t!=='alpi');  try{localStorage.setItem('sfv_cal_tab',t);}catch(_){} }
+
+/* ───────── Accesso ───────── */
+function authTab(t){
+  $('tab-login').classList.toggle('on',t==='login'); $('tab-reg').classList.toggle('on',t==='reg');
+  $('f-login').classList.toggle('hidden',t!=='login'); $('f-reg').classList.toggle('hidden',t!=='reg');
+  msg('auth-msg');
+}
+async function doLogin(e){
+  e.preventDefault(); msg('auth-msg');
+  const b=$('b-login'); b.disabled=true;
+  try{ await auth.signInWithEmailAndPassword($('l-email').value.trim(), $('l-pwd').value); }
+  catch(err){ msg('auth-msg','err',erroreIT(err)); }
+  b.disabled=false;
+}
+async function doRegister(e){
+  e.preventDefault(); msg('auth-msg');
+  const nome=$('r-nome').value.trim(), cognome=$('r-cognome').value.trim(), email=$('r-email').value.trim();
+  if(!$('r-privacy').checked){ msg('auth-msg','err','Per registrarti devi accettare l\'informativa privacy.'); return; }
+  if(!$('r-news').checked){ msg('auth-msg','err','L\'app è gratuita in cambio delle comunicazioni della Scuola: per registrarti spunta anche la seconda casella.'); return; }
+  const b=$('b-reg'); b.disabled=true; _registrando=true;
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(email,$('r-pwd').value);
+    try{ await cred.user.updateProfile({displayName:(nome+' '+cognome).trim()}); }catch(_){}
+    await db.collection('cacciatori').doc(cred.user.uid).set({
+      nome, cognome, email:cred.user.email||email,
+      privacyAccettata:true, newsletter:true, consensoComunicazioniIl:new Date().toISOString(), apps:[APP],
+      creatoIl:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    profilo={nome,cognome,email:cred.user.email||email,newsletter:true};
+    try{ await cred.user.sendEmailVerification(); }catch(_){}
+    me=cred.user; isAdmin=false; _registrando=false;
+    $('auth').classList.add('hidden'); $('app').classList.remove('hidden');
+    avviaApp(); toast('Benvenuto! Account creato.');
+  }catch(err){
+    _registrando=false; msg('auth-msg','err',erroreIT(err));
+    // account creato ma profilo non salvato: si completa al prossimo accesso
+    if(auth.currentUser){ me=auth.currentUser; await caricaProfilo(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); avviaApp(); if(!profilo) completaProfilo(); }
+  }
+  b.disabled=false;
+}
+async function doReset(){
+  const email=$('l-email').value.trim();
+  if(!email){ msg('auth-msg','err','Scrivi la tua email nel campo qui sopra, poi tocca di nuovo “Password dimenticata?”.'); return; }
+  try{ await auth.sendPasswordResetEmail(email); msg('auth-msg','ok','Se l\'email è registrata, riceverai a breve il link per scegliere una nuova password.'); }
+  catch(err){ msg('auth-msg','err',erroreIT(err)); }
+}
+async function doLogout(){ await auth.signOut(); location.hash=''; }
+
+/* ───────── Documenti ───────── */
+function renderCategorie(){
+  $('cat-grid').innerHTML=CATEGORIE.map(c=>{
+    const n=DOCS.filter(d=>d.categoria===c.id).length;
+    const f=faunaDi(c.fauna);
+    return `<button class="cat foto" onclick="apriCategoria('${c.id}')"><img class="ph" src="${fotoUrl(f,500)}" alt="" loading="lazy" onerror="this.remove()"><span class="ph-nome">${esc(f.nome)}</span><i class="ti ${c.icon}"></i><b>${esc(c.nome)}</b><span class="cnt">${n} document${n===1?'o':'i'}</span></button>`;
+  }).join('');
+}
+function apriCategoria(id){ catSel=id; renderChips(); renderDocs(); go('docs'); }
+function renderChips(){
+  const all=[{id:'tutte',nome:'Tutti'},...CATEGORIE];
+  $('chips').innerHTML=all.map(c=>`<button class="chip ${catSel===c.id?'on':''}" onclick="catSel='${c.id}';renderChips();renderDocs()">${esc(c.nome)}</button>`).join('');
+}
+function caricaDocumenti(){
+  try{ const c=JSON.parse(localStorage.getItem(LS_DOCS)||'null'); if(c&&Array.isArray(c)){ DOCS=c; renderTuttoDocs(); } }catch(_){}
+  db.collection('app_documenti').onSnapshot(snap=>{
+    DOCS=snap.docs.map(d=>{const x=d.data();return {id:d.id,...x,creatoMs:tsMs(x.creatoIl)};})
+      .filter(d=>d.pubblicato!==false||isAdmin)
+      .sort((a,b)=>b.creatoMs-a.creatoMs);
+    try{ localStorage.setItem(LS_DOCS,JSON.stringify(DOCS)); }catch(_){}
+    renderTuttoDocs();
+  },err=>{
+    console.warn('documenti',err);
+    if(!DOCS.length){
+      const t=`<div class="empty"><i class="ti ti-cloud-off"></i><b>Documenti non disponibili</b>${err&&err.code==='permission-denied'?'Accesso ai documenti non ancora abilitato.':'Controlla la connessione e riprova.'}</div>`;
+      $('doc-list').innerHTML=t; $('home-recent').innerHTML=t;
+    }
+  });
+}
+function renderTuttoDocs(){ renderCategorie(); renderDocs(); renderRecenti(); if(isAdmin) renderAdminDocs(); }
+function docRiga(d){
+  const c=catDi(d.categoria);
+  const nuovo=d.creatoMs && (Date.now()-d.creatoMs)<14*86400000;
+  const meta=[c.nome, d.ente, d.dataDoc?fmtData(d.dataDoc):'', d.pubblicato===false?'NON PUBBLICATO':''].filter(Boolean).map(esc).join(' · ');
+  return `<button class="doc" onclick="apriDoc('${esc(d.id)}')"><div class="ic"><i class="ti ${d.tipo==='link'?'ti-link':c.icon}"></i></div><div class="bd"><div class="tt">${esc(d.titolo)}${nuovo?'<span class="badge-new">NUOVO</span>':''}</div>${d.descrizione?`<div class="ds">${esc(d.descrizione)}</div>`:''}<div class="mt">${meta}</div></div><i class="ti ti-external-link go"></i></button>`;
+}
+function renderDocs(){
+  const q=($('q').value||'').toLowerCase().trim();
+  const l=DOCS.filter(d=>(catSel==='tutte'||d.categoria===catSel)&&(!q||[d.titolo,d.descrizione,d.ente].join(' ').toLowerCase().includes(q)));
+  $('doc-list').innerHTML=l.length?l.map(docRiga).join(''):`<div class="empty"><i class="ti ti-file-search"></i><b>${DOCS.length?'Nessun documento trovato':'Ancora nessun documento'}</b>${DOCS.length?'Prova con un\'altra parola o un\'altra categoria.':'La Scuola li pubblicherà a breve.'}</div>`;
+}
+function renderRecenti(){
+  const l=DOCS.filter(d=>d.pubblicato!==false).slice(0,4);
+  $('home-recent').innerHTML=l.length?l.map(docRiga).join(''):`<div class="empty"><i class="ti ti-files"></i><b>Ancora nessun documento</b>La Scuola li pubblicherà a breve.</div>`;
+}
+function apriDoc(id){
+  const d=DOCS.find(x=>x.id===id); if(!d||!d.url){ toast('Documento non disponibile'); return; }
+  window.open(d.url,'_blank','noopener');
+}
+
+/* ───────── Scadenze (solo sul telefono) ───────── */
+function leggiScad(){ try{ return JSON.parse(localStorage.getItem(LS_SCAD)||'[]'); }catch(_){ return []; } }
+function salvaScad(l){ try{ localStorage.setItem(LS_SCAD,JSON.stringify(l)); }catch(_){ toast('Impossibile salvare sul telefono'); } notifSincronizza(); }
+function statoScad(s){
+  const g=giorniA(s.scadenza);
+  if(g<0) return {cls:'red',txt:g===-1?'Scaduto ieri':`Scaduto da ${-g} giorni`,g};
+  if(g===0) return {cls:'red',txt:'Scade oggi',g};
+  if(g<=30) return {cls:'amber',txt:g===1?'Scade domani':`Tra ${g} giorni`,g};
+  return {cls:'green',txt:g<=365?`Tra ${g} giorni`:'In regola',g};
+}
+function renderScadenze(){
+  const l=leggiScad().sort((a,b)=>a.scadenza.localeCompare(b.scadenza));
+  $('scad-all').classList.toggle('hidden',l.length<2);
+  $('scad-list').innerHTML=l.length?l.map(s=>{
+    const st=statoScad(s);
+    return `<div class="scad st-${st.cls}"><div class="hd"><div><div class="nm">${esc(s.nome)}</div><div class="dt">Scade il <b>${fmtData(s.scadenza)}</b></div>${s.note?`<div class="nt">${esc(s.note)}</div>`:''}</div><span class="pill ${st.cls}">${st.txt}</span></div>
+      <div class="acts">${s.allegato?`<button class="btn btn-gold btn-sm" onclick="apriAllegato('${s.id}')"><i class="ti ${s.allegato.tipo==='pdf'?'ti-file-type-pdf':'ti-photo'}"></i> Copia</button>`:''}<button class="btn btn-soft btn-sm" onclick="calScad('${s.id}')"><i class="ti ti-calendar-plus"></i> Calendario</button><button class="btn btn-ghost btn-sm" onclick="editScad('${s.id}')"><i class="ti ti-pencil"></i> Modifica</button><button class="btn btn-ghost btn-sm" onclick="delScad('${s.id}')" aria-label="Elimina"><i class="ti ti-trash"></i></button></div></div>`;
+  }).join(''):`<div class="empty"><i class="ti ti-calendar-off"></i><b>Nessuna scadenza inserita</b>Aggiungi porto d'armi, assicurazione, tasse e gli altri documenti: ti ricorderemo quando rinnovarli.</div>`;
+
+  // Riquadro in home + pallino nella barra
+  const urg=l.map(s=>({s,st:statoScad(s)})).filter(x=>x.st.g<=30);
+  const dot=$('dot-scad'); if(dot){ dot.classList.toggle('hidden',!urg.length); dot.textContent=urg.length; }
+  let h='';
+  if(!l.length){
+    h=`<div class="alert-box al-green"><div class="ic"><i class="ti ti-bell-plus"></i></div><div><h4>Promemoria scadenze</h4><p>Inserisci le date dei tuoi documenti: restano solo sul tuo telefono.</p><button class="btn btn-sm" style="margin-top:10px;background:var(--green-700);color:#fff" onclick="go('scad');editScad()"><i class="ti ti-plus"></i> Aggiungi</button></div></div>`;
+  }else if(urg.length){
+    const scaduti=urg.some(x=>x.st.g<=0);
+    h=`<div class="alert-box ${scaduti?'al-red':'al-amber'}" onclick="go('scad')" style="cursor:pointer"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div style="flex:1"><h4>${urg.length===1?'1 documento in scadenza':urg.length+' documenti in scadenza'}</h4><ul>${urg.slice(0,4).map(x=>`<li><span>${esc(x.s.nome)}</span><b>${x.st.txt}</b></li>`).join('')}</ul></div></div>`;
+  }else{
+    const p=l[0];
+    h=`<div class="alert-box al-green" onclick="go('scad')" style="cursor:pointer"><div class="ic"><i class="ti ti-circle-check"></i></div><div><h4>Documenti in regola</h4><p>Prossima scadenza: ${esc(p.nome)} il ${fmtData(p.scadenza)}.</p></div></div>`;
+  }
+  $('home-scad').innerHTML=h;
+  renderHomeTiles();
+}
+function editScad(id){
+  const s=id?leggiScad().find(x=>x.id===id):null;
+  const isAltro=s&&!TIPI_SCADENZA.includes(s.nome);
+  openSheet(`<h3>${s?'Modifica scadenza':'Nuova scadenza'}</h3><p class="sub">Copia la data di scadenza dal tuo documento.</p>
+    <div id="s-msg"></div>
+    <div class="field"><label for="s-tipo">Documento</label><select class="input" id="s-tipo" onchange="$('s-altro-w').classList.toggle('hidden',this.value!=='__altro')">
+      ${TIPI_SCADENZA.map(t=>`<option ${s&&s.nome===t?'selected':''}>${esc(t)}</option>`).join('')}<option value="__altro" ${isAltro?'selected':''}>Altro…</option></select></div>
+    <div class="field ${isAltro?'':'hidden'}" id="s-altro-w"><label for="s-altro">Nome del documento</label><input class="input" id="s-altro" maxlength="80" value="${isAltro?esc(s.nome):''}" placeholder="Es. Iscrizione squadra di braccata"></div>
+    <div class="field"><label for="s-data">Data di scadenza</label><input class="input" id="s-data" type="date" value="${s?s.scadenza:''}" required></div>
+    <div class="field"><label for="s-note">Nota (facoltativa)</label><input class="input" id="s-note" maxlength="120" value="${s?esc(s.note||''):''}" placeholder="Es. rinnovare in Questura"></div>
+    <div class="field"><label>Copia del documento (facoltativa)</label><div id="s-all"></div><p style="font-size:12px;color:var(--text-3);margin-top:6px"><i class="ti ti-shield-lock"></i> Resta solo su questo telefono.</p></div>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" id="b-scad" onclick="salvaScadForm('${s?s.id:''}')"><i class="ti ti-check"></i> Salva</button></div>`);
+  _allNuovo=null; _allRimuovi=false; mostraAllegatoForm(s&&s.allegato||null);
+}
+async function salvaScadForm(id){
+  const tipo=$('s-tipo').value, nome=tipo==='__altro'?$('s-altro').value.trim():tipo, data=$('s-data').value;
+  if(!nome){ msg('s-msg','err','Scrivi il nome del documento.'); return; }
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(data)){ msg('s-msg','err','Inserisci la data di scadenza.'); return; }
+  const l=leggiScad(); const prec=l.find(x=>x.id===id);
+  const rec={id:id||('s'+Date.now().toString(36)),nome,scadenza:data,note:$('s-note').value.trim()};
+  $('b-scad').disabled=true;
+  try{ const m=await salvaAllegato(rec.id); if(m) rec.allegato=m; else if(m===undefined&&prec&&prec.allegato) rec.allegato=prec.allegato; }
+  catch(e){ msg('s-msg','err','Non riesco a salvare la copia sul telefono: lo spazio potrebbe essere pieno.'); $('b-scad').disabled=false; return; }
+  const i=l.findIndex(x=>x.id===id); if(i>=0) l[i]=rec; else l.push(rec);
+  salvaScad(l); closeSheet(); renderScadenze();
+  if(!id){ openSheet(`<h3>Scadenza salvata</h3><p class="sub">Vuoi che il telefono te la ricordi? Aggiungila al calendario: riceverai un avviso 30 giorni e 7 giorni prima.</p>${bottoniCalendario(rec)}<div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Più tardi</button></div>`); }
+}
+function delScad(id){
+  const s=leggiScad().find(x=>x.id===id); if(!s) return;
+  openSheet(`<h3>Eliminare questa scadenza?</h3><p class="sub">${esc(s.nome)} — ${fmtData(s.scadenza)}.<br>${s.allegato?'Viene cancellata anche la copia del documento. ':''}Se l'avevi aggiunta al calendario, cancellala anche da lì.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="allegatoDel('${id}');salvaScad(leggiScad().filter(x=>x.id!=='${id}'));closeSheet();renderScadenze()"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+
+/* ───────── Calendario ───────── */
+function isApple(){ return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1); }
+function icsTesto(t){ return String(t).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function icsPiega(line){ // righe max 75 caratteri (standard iCalendar)
+  const out=[]; let s=line; while(s.length>73){ out.push(s.slice(0,73)); s=' '+s.slice(73); } out.push(s); return out.join('\r\n');
+}
+function icsEvento(s){
+  const d=s.scadenza.replace(/-/g,''), fine=addGiorni(s.scadenza,1).replace(/-/g,'');
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
+  const desc=`Scadenza del documento: ${s.nome} (${fmtData(s.scadenza)}).${s.note?' Nota: '+s.note:''} Promemoria da SFV Cacciatore - Scuola Faunistica Venatoria.`;
+  const alarm=(trig,txt)=>['BEGIN:VALARM','ACTION:DISPLAY','TRIGGER:'+trig,'DESCRIPTION:'+icsTesto(txt),'END:VALARM'];
+  return ['BEGIN:VEVENT',`UID:${s.id}-${d}@sfv-cacciatore`,'DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+d,'DTEND;VALUE=DATE:'+fine,
+    'SUMMARY:'+icsTesto('Scadenza: '+s.nome),'DESCRIPTION:'+icsTesto(desc),'TRANSP:TRANSPARENT',
+    ...alarm('-P30D',`${s.nome} scade tra 30 giorni`),...alarm('-P7D',`${s.nome} scade tra 7 giorni`),...alarm('PT9H',`${s.nome} scade oggi`),
+    'END:VEVENT'].map(icsPiega);
+}
+function icsFile(lista){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Scuola Faunistica Venatoria//SFV Cacciatore//IT','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    ...lista.flatMap(icsEvento),'END:VCALENDAR'].join('\r\n')+'\r\n';
+}
+function scaricaIcs(lista,nome){
+  const txt=icsFile(lista);
+  if(isApple()){
+    // Su iPhone il file calendario si apre direttamente con "Aggiungi tutti al Calendario"
+    const a=document.createElement('a'); a.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(txt); a.target='_blank'; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove(); return;
+  }
+  const url=URL.createObjectURL(new Blob([txt],{type:'text/calendar;charset=utf-8'}));
+  const a=document.createElement('a'); a.href=url; a.download=nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+function googleUrl(s){
+  // Evento "Rinnovo" che parte 30 giorni prima e dura fino alla scadenza:
+  // compare ogni giorno nel calendario finché non hai rinnovato.
+  let inizio=addGiorni(s.scadenza,-30); if(inizio<oggiISO()) inizio=oggiISO(); if(inizio>s.scadenza) inizio=s.scadenza;
+  const p=new URLSearchParams({action:'TEMPLATE',text:`Rinnovare: ${s.nome} (scade il ${fmtData(s.scadenza)})`,
+    dates:inizio.replace(/-/g,'')+'/'+addGiorni(s.scadenza,1).replace(/-/g,''),
+    details:`Il documento "${s.nome}" scade il ${fmtData(s.scadenza)}.${s.note?' Nota: '+s.note:''}\nPromemoria da SFV Cacciatore - Scuola Faunistica Venatoria.`});
+  return 'https://calendar.google.com/calendar/render?'+p.toString();
+}
+function bottoniCalendario(s){
+  const apple=isApple();
+  const ics=`<button class="btn ${apple?'btn-primary':'btn-soft'}" style="width:100%;margin-bottom:8px" onclick="scaricaIcs([leggiScad().find(x=>x.id==='${s.id}')],'scadenza.ics')"><i class="ti ti-calendar-plus"></i> ${apple?'Aggiungi al Calendario di iPhone':'Scarica file calendario (.ics)'}</button>`;
+  const g=`<a class="btn ${apple?'btn-soft':'btn-primary'}" style="width:100%;margin-bottom:8px;text-decoration:none" href="${esc(googleUrl(s))}" target="_blank" rel="noopener"><i class="ti ti-brand-google"></i> Aggiungi a Google Calendar</a>`;
+  return (apple?ics+g:g+ics)+`<p style="font-size:12px;color:var(--text-3);margin-top:4px">${apple?'Il file calendario imposta da solo gli avvisi a 30 giorni, 7 giorni e il giorno stesso.':'Con Google Calendar il promemoria resta visibile nei 30 giorni prima della scadenza. Il file .ics (per Samsung Calendar, Outlook e altri) imposta gli avvisi a 30 e 7 giorni.'}</p>`;
+}
+function calScad(id){
+  const s=leggiScad().find(x=>x.id===id); if(!s) return;
+  openSheet(`<h3>Aggiungi al calendario</h3><p class="sub">${esc(s.nome)} — scade il ${fmtData(s.scadenza)}</p>${bottoniCalendario(s)}<div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Chiudi</button></div>`);
+}
+function calAll(){
+  const l=leggiScad(); if(!l.length) return;
+  scaricaIcs(l,'scadenze-sfv.ics');
+  if(!isApple()) toast('File scaricato: aprilo per aggiungere tutte le scadenze al calendario');
+}
+
+/* ───────── Calendario venatorio ─────────
+   Un calendario per ogni Regione / Provincia autonoma, nella collezione
+   "app_calendari" (documento = id regione). Per ciascuno l'amministratore
+   incolla il collegamento ufficiale o carica il PDF: niente da trascrivere.
+   Comprensorio alpino: solo sul telefono del cacciatore (localStorage). */
+const REGIONI=[
+  ['abruzzo','Abruzzo'],['basilicata','Basilicata'],['bolzano','Alto Adige (Prov. Bolzano)'],['calabria','Calabria'],['campania','Campania'],
+  ['emilia-romagna','Emilia-Romagna'],['friuli-venezia-giulia','Friuli Venezia Giulia'],['lazio','Lazio'],['liguria','Liguria'],['lombardia','Lombardia'],
+  ['marche','Marche'],['molise','Molise'],['piemonte','Piemonte'],['puglia','Puglia'],['sardegna','Sardegna'],['sicilia','Sicilia'],
+  ['toscana','Toscana'],['trento','Trentino (Prov. Trento)'],['umbria','Umbria'],['valle-d-aosta',"Valle d'Aosta"],['veneto','Veneto'],
+].map(([id,nome])=>({id,nome})).sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+/* Collegamenti ufficiali 2026/2027 verificati (ottobre 2026): l'amministratore li conferma con un tocco */
+const CAL_SUGGERITI={
+  'abruzzo':'https://bura.regione.abruzzo.it/sites/bura.regione.abruzzo.it/files/bollettini/2026-06-11/d-g-r-n-334-del-9-6-2026.pdf',
+  'umbria':'https://www.regione.umbria.it/documents/18/2422369/Calendario+venatorio+2026-2027/5fa638fd-3403-488f-8a91-1d65379ba169',
+  'toscana':'https://www.regione.toscana.it/-/stagione-venatoria-2026-2027',
+  'basilicata':'https://agricoltura.regione.basilicata.it/wp-content/uploads/2026/06/Allegato_A-_calendario_venatorio26-27.pdf',
+  'calabria':'https://www.regione.calabria.it/wp-content/uploads/2026/07/Delibera-443-21.07.2026_-Approvazione-Calendario-Venatorio-2026-2027.pdf.pdf',
+};
+const LS_CAL='sfv_cal_cache_v2', LS_ALPI='sfv_alpi_v1', LS_REG='sfv_regione_v1';
+let CAL={};
+function regNome(id){ const r=REGIONI.find(x=>x.id===id); return r?r.nome:''; }
+function stagioneAttesa(){ const d=new Date(), y=d.getFullYear(); return d.getMonth()>=6?`${y}/${y+1}`:`${y-1}/${y}`; }
+function cercaUrl(id){ return 'https://www.google.com/search?q='+encodeURIComponent(`calendario venatorio ${stagioneAttesa()} ${regNome(id).replace(/\s*\(.*\)/,'')} sito ufficiale`); }
+function miaRegione(){ try{ return localStorage.getItem(LS_REG)||''; }catch(_){ return ''; } }
+function setRegione(id){ try{ localStorage.setItem(LS_REG,id); }catch(_){} renderCal(); }
+function statoPeriodo(dal,al){
+  const o=oggiISO();
+  if(!dal||!al) return {cls:'grey',txt:'Date da definire',aperta:false};
+  if(o<dal){ const g=giorniA(dal); return {cls:'amber',txt:g<=30?(g===1?'Apre domani':`Apre tra ${g} giorni`):'Apre il '+fmtData(dal),aperta:false}; }
+  if(o>al) return {cls:'grey',txt:'Chiusa',aperta:false};
+  const g=giorniA(al);
+  return {cls:'green',txt:g===0?'Aperta, chiude oggi':g<=7?`Aperta, chiude tra ${g} gg`:'Aperta',aperta:true};
+}
+function periodoTxt(r){ return r.dal&&r.al?`dal ${fmtData(r.dal)} al ${fmtData(r.al)}`:'Date da definire'; }
+
+function caricaCalendario(){
+  try{ const c=JSON.parse(localStorage.getItem(LS_CAL)||'null'); if(c&&typeof c==='object'){ CAL=c; renderCal(); } }catch(_){}
+  db.collection('app_calendari').onSnapshot(snap=>{
+    CAL={}; snap.docs.forEach(d=>{ const x=d.data(); if(x.url&&(x.pubblicato!==false||isAdmin)) CAL[d.id]=x; });
+    try{ localStorage.setItem(LS_CAL,JSON.stringify(CAL)); }catch(_){}
+    renderCal(); if(isAdmin) renderAdminCal();
+  },err=>{ console.warn('calendari',err); renderCal(); });
+}
+function vecchio(c){ return c&&c.stagione&&c.stagione!==stagioneAttesa(); }
+function renderCal(){
+  const mia=miaRegione();
+  $('cal-season').innerHTML=`<label class="reg-pick"><i class="ti ti-map-pin"></i><span>La mia regione</span><select id="cal-reg-sel" onchange="setRegione(this.value)" aria-label="La mia regione"><option value="">Scegli…</option>${REGIONI.map(r=>`<option value="${r.id}" ${r.id===mia?'selected':''}>${esc(r.nome)}</option>`).join('')}</select></label>`;
+  let h='';
+  if(mia){
+    const c=CAL[mia];
+    h+=c?`<div class="cal-head"><div style="min-width:0"><div class="eyebrow">Calendario venatorio</div><div class="cal-title">${esc(regNome(mia))}</div><div class="cal-upd">Stagione ${esc(c.stagione||'')}${c.aggiornatoTxt?` · inserito il ${esc(c.aggiornatoTxt)}`:''}</div></div><div class="cal-badge"><i class="ti ${c.tipo==='file'?'ti-file-type-pdf':'ti-world'}"></i></div></div>
+      ${vecchio(c)?`<div class="msg err" style="margin-top:8px"><i class="ti ti-alert-triangle"></i><span>È il calendario della stagione ${esc(c.stagione)}: quello nuovo non è ancora stato inserito.</span></div>`:''}
+      ${c.nota?`<div class="card" style="font-size:14px;white-space:pre-line;margin-top:8px">${esc(c.nota)}</div>`:''}
+      <a class="btn btn-primary" style="margin-top:10px;text-decoration:none" href="${esc(c.url)}" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Apri il calendario ufficiale</a>
+      <a class="link" style="display:block;text-align:center;margin-top:10px" href="${esc(cercaUrl(mia))}" target="_blank" rel="noopener">Non si apre? Cercalo sul sito della Regione</a>`
+    :`<div class="cal-head"><div><div class="eyebrow">Calendario venatorio</div><div class="cal-title">${esc(regNome(mia))}</div><div class="cal-upd">Stagione ${stagioneAttesa()}</div></div></div>
+      <div class="card" style="font-size:14px;margin-top:8px;color:var(--text-2)">Il calendario di questa regione non è ancora stato inserito nell'app. Nel frattempo puoi cercarlo sul sito ufficiale.</div>
+      <a class="btn btn-primary" style="margin-top:10px;text-decoration:none" href="${esc(cercaUrl(mia))}" target="_blank" rel="noopener"><i class="ti ti-search"></i> Cerca il calendario ${esc(stagioneAttesa())}</a>`;
+  }else{
+    h+=`<div class="alpi-empty"><i class="ti ti-map-pin"></i><div><b>In quale regione cacci?</b><p>Scegli la tua regione qui sopra: il suo calendario comparirà per primo, anche in Home.</p></div></div>`;
+  }
+  const altre=REGIONI.filter(r=>r.id!==mia);
+  h+=`<h3 class="sec">${mia?'Altre regioni':'Tutte le regioni'}</h3><div class="card reg-list">${altre.map(r=>{const c=CAL[r.id];
+    return c?`<a class="reg-row" href="${esc(c.url)}" target="_blank" rel="noopener"><span class="rn">${esc(r.nome)}</span><span class="rs ${vecchio(c)?'old':''}">${esc(c.stagione||'')}</span><i class="ti ti-external-link"></i></a>`
+            :`<a class="reg-row muted" href="${esc(cercaUrl(r.id))}" target="_blank" rel="noopener"><span class="rn">${esc(r.nome)}</span><span class="rs">cerca</span><i class="ti ti-search"></i></a>`;}).join('')}</div>
+    <p class="fine">L'app rimanda ai documenti ufficiali: fanno fede il calendario della Regione e le disposizioni del tuo ATC o comprensorio.</p>`;
+  $('cal-reg').innerHTML=h; $('cal-chips').innerHTML='';
+  renderCalHome();
+}
+function renderCalHome(){
+  renderHomeTiles();
+  const mia=miaRegione(), c=mia?CAL[mia]:null, alpi=leggiAlpi();
+  const apA=alpi?(alpi.righe||[]).filter(r=>statoPeriodo(r.dal,r.al).aperta):[];
+  if(APP==='montagna'){
+    const t2=alpi?`<h4>${esc(alpi.nome)}</h4><p>${apA.length?`${apA.length} specie aperte oggi`:'Nessuna specie aperta oggi'} · tocca per il calendario interno</p>`:`<h4>Il mio comprensorio alpino</h4><p>Inserisci il tuo comprensorio e il suo calendario interno.</p>`;
+    $('home-cal').innerHTML=`<button class="home-cal foto" onclick="go('cal')"><img class="ph" src="${fotoUrl(faunaDi(VAR.fotoCal),800)}" alt="" onerror="this.remove()"><span class="ph-nome">${esc(faunaDi(VAR.fotoCal).nome)}</span><div class="ic"><i class="ti ti-mountain"></i></div><div style="flex:1;min-width:0">${t2}</div><i class="ti ti-chevron-right" style="font-size:20px"></i></button>`;
+    return;
+  }
+  const t=mia?`<h4>Calendario venatorio ${esc(regNome(mia))}</h4><p>${c?`Stagione ${esc(c.stagione||'')}: tocca per aprirlo`:'Non ancora inserito: tocca per cercarlo'}${alpi?`<br>${esc(alpi.nome)}: ${apA.length} specie aperte oggi`:''}</p>`
+               :`<h4>Calendario venatorio</h4><p>Scegli la tua regione per averlo sempre a portata di mano.</p>`;
+  $('home-cal').innerHTML=`<button class="home-cal foto" onclick="go('cal')"><img class="ph" src="${fotoUrl(faunaDi(VAR.fotoCal),800)}" alt="" onerror="this.remove()"><span class="ph-nome">${esc(faunaDi(VAR.fotoCal).nome)}</span><div class="ic"><i class="ti ti-calendar-event"></i></div><div style="flex:1;min-width:0">${t}</div><i class="ti ti-chevron-right" style="color:var(--text-3);font-size:20px"></i></button>`;
+}
+
+/* Dal nome scritto dal cacciatore alla foto della specie */
+function specieFoto(nome){
+  const n=String(nome||'').toLowerCase();
+  const M=[['camosc','camoscio'],['capriol','capriolo'],['muflon','muflone'],['stambecc','stambecco'],['cinghial','cinghiale'],['daino','daino'],['cervo','cervo'],
+    ['forcello','fagiano-monte'],['fagiano di monte','fagiano-monte'],['cedrone','gallo-cedrone'],['urogallo','gallo-cedrone'],['coturnic','coturnice'],['pernice bianca','pernice-bianca'],
+    ['francolin','francolino'],['lepre bianca','lepre-bianca'],['lepre variabile','lepre-bianca'],['lepre','lepre'],['volpe','volpe'],['beccacc','beccaccia'],['starna','starna'],['fagiano','fagiano'],['germano','germano'],['gallinella','gallinella']];
+  const t=M.find(([k])=>n.includes(k)); return t?t[1]:null;
+}
+/* Comprensorio alpino — solo sul telefono */
+function leggiAlpi(){ try{ const a=JSON.parse(localStorage.getItem(LS_ALPI)||'null'); return a&&a.nome?a:null; }catch(_){ return null; } }
+function salvaAlpi(a){ try{ if(a) localStorage.setItem(LS_ALPI,JSON.stringify(a)); else localStorage.removeItem(LS_ALPI); }catch(_){ toast('Impossibile salvare sul telefono'); } }
+function renderAlpi(){
+  const a=leggiAlpi();
+  if(!a){
+    $('cal-alpi').innerHTML=`<div class="alpi-empty foto"><img class="ph" src="${fotoUrl(faunaDi('camoscio'),800)}" alt="" onerror="this.remove()"><i class="ti ti-mountain"></i><div><b>Il tuo comprensorio alpino</b><p>Inserisci il nome del tuo comprensorio e il suo calendario interno: specie, periodi e regole. Restano solo sul tuo telefono.</p><button class="btn btn-primary btn-sm" style="width:auto;margin-top:10px" onclick="editAlpi()"><i class="ti ti-plus"></i> Inserisci il mio comprensorio</button></div></div>`;
+    renderCalHome(); return;
+  }
+  const righe=(a.righe||[]).slice().sort((x,y)=>String(x.dal||'').localeCompare(String(y.dal||'')));
+  $('cal-alpi').innerHTML=`<div class="alpi">
+    <div class="alpi-hd"><i class="ti ti-mountain"></i><div style="flex:1;min-width:0"><div class="eyebrow" style="color:var(--green-200)">Comprensorio alpino</div><div class="alpi-nm">${esc(a.nome)}</div>${a.distretto?`<div class="alpi-sub">${esc(a.distretto)}</div>`:''}</div><button class="ibtn-l" onclick="editAlpi()" aria-label="Modifica comprensorio"><i class="ti ti-pencil"></i></button></div>
+    ${a.note?`<div class="alpi-note">${esc(a.note).replace(/\n/g,'<br>')}</div>`:''}
+    <div class="alpi-list">${righe.length?righe.map(r=>{const s=statoPeriodo(r.dal,r.al), fs=specieFoto(r.specie);return `<button class="spr st-${s.cls} ${fs?'foto riga-foto':''}" onclick="editAlpiRiga('${r.id}')" style="width:100%;text-align:left">${fs?`<img class="ph" src="${fotoUrl(faunaDi(fs),700)}" alt="" loading="lazy" onerror="this.remove()">`:''}<div class="sp-bd"><div class="sp-nm">${esc(r.specie)}</div><div class="sp-dt">${periodoTxt(r)}</div>${r.note?`<div class="sp-nt">${esc(r.note)}</div>`:''}</div><span class="pill ${s.cls}">${s.txt}</span></button>`;}).join(''):`<p style="font-size:13px;color:var(--text-2);padding:4px 2px 10px">Aggiungi le specie e i periodi stabiliti dal tuo comprensorio.</p>`}
+      <button class="btn btn-soft" style="width:100%" onclick="editAlpiRiga()"><i class="ti ti-plus"></i> Aggiungi specie e periodo</button>
+    </div>
+    <p class="alpi-priv"><i class="ti ti-shield-lock"></i> Salvato solo su questo telefono.</p>
+  </div>`;
+  renderCalHome();
+}
+function editAlpi(){
+  const a=leggiAlpi()||{};
+  openSheet(`<h3>${a.nome?'Il mio comprensorio':'Comprensorio alpino'}</h3><p class="sub">Scrivi il nome come compare sul tuo tesserino o sui documenti del comprensorio.</p><div id="al-msg"></div>
+    <div class="field"><label for="al-nome">Nome del comprensorio alpino</label><input class="input" id="al-nome" maxlength="80" value="${esc(a.nome||'')}" placeholder="Es. C.A. n. … di …"></div>
+    <div class="field"><label for="al-dist">Riserva o distretto (facoltativo)</label><input class="input" id="al-dist" maxlength="80" value="${esc(a.distretto||'')}"></div>
+    <div class="field"><label for="al-note">Regole interne (facoltativo)</label><textarea class="input" id="al-note" maxlength="1000" placeholder="Giornate, orari, uscite consentite, zone chiuse, consegna capi…">${esc(a.note||'')}</textarea></div>
+    <div class="foot">${a.nome?`<button class="btn btn-danger" onclick="delAlpi()" aria-label="Elimina comprensorio"><i class="ti ti-trash"></i></button>`:''}<button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" onclick="salvaAlpiForm()"><i class="ti ti-check"></i> Salva</button></div>`);
+}
+function salvaAlpiForm(){
+  const nome=$('al-nome').value.trim(); if(!nome){ msg('al-msg','err','Scrivi il nome del comprensorio.'); return; }
+  const a=leggiAlpi()||{righe:[]};
+  salvaAlpi({...a,nome,distretto:$('al-dist').value.trim(),note:$('al-note').value.trim()});
+  closeSheet(); renderAlpi(); toast('Comprensorio salvato');
+}
+function delAlpi(){
+  openSheet(`<h3>Eliminare il comprensorio?</h3><p class="sub">Cancelli dal telefono il nome e il calendario interno che hai inserito.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="salvaAlpi(null);closeSheet();renderAlpi()"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+function editAlpiRiga(id){
+  const a=leggiAlpi(); if(!a) return;
+  const r=id?(a.righe||[]).find(x=>x.id===id):null;
+  openSheet(`<h3>${r?'Modifica periodo':'Specie e periodo'}</h3><p class="sub">${esc(a.nome)}</p><div id="ar-msg"></div>
+    <div class="field"><label for="ar-sp">Specie</label><input class="input" id="ar-sp" maxlength="80" list="ar-specie" value="${r?esc(r.specie):''}" placeholder="Es. Camoscio"><datalist id="ar-specie">${['Camoscio','Capriolo','Cervo','Muflone','Cinghiale','Gallo forcello','Coturnice','Lepre bianca','Lepre comune','Pernice bianca','Volpe','Beccaccia','Tordo bottaccio','Cesena'].map(x=>`<option value="${x}">`).join('')}</datalist></div>
+    <div class="row2"><div class="field"><label for="ar-dal">Dal</label><input class="input" id="ar-dal" type="date" value="${r?esc(r.dal||''):''}"></div><div class="field"><label for="ar-al">Al</label><input class="input" id="ar-al" type="date" value="${r?esc(r.al||''):''}"></div></div>
+    <div class="field"><label for="ar-note">Nota (facoltativa)</label><input class="input" id="ar-note" maxlength="140" value="${r?esc(r.note||''):''}" placeholder="Es. solo classe 0, solo giovedì e domenica"></div>
+    <div class="foot">${r?`<button class="btn btn-danger" onclick="delAlpiRiga('${r.id}')" aria-label="Elimina periodo"><i class="ti ti-trash"></i></button>`:''}<button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" onclick="salvaAlpiRiga('${r?r.id:''}')"><i class="ti ti-check"></i> Salva</button></div>`);
+}
+function salvaAlpiRiga(id){
+  const specie=$('ar-sp').value.trim(), dal=$('ar-dal').value, al=$('ar-al').value;
+  if(!specie){ msg('ar-msg','err','Scrivi la specie.'); return; }
+  if(!dal||!al){ msg('ar-msg','err','Inserisci le date di inizio e fine.'); return; }
+  if(al<dal){ msg('ar-msg','err','La data di fine viene prima di quella di inizio.'); return; }
+  const a=leggiAlpi(); a.righe=a.righe||[];
+  const rec={id:id||('r'+Date.now().toString(36)),specie,dal,al,note:$('ar-note').value.trim()};
+  const i=a.righe.findIndex(x=>x.id===id); if(i>=0) a.righe[i]=rec; else a.righe.push(rec);
+  salvaAlpi(a); closeSheet(); renderAlpi();
+}
+function delAlpiRiga(id){ const a=leggiAlpi(); a.righe=(a.righe||[]).filter(x=>x.id!==id); salvaAlpi(a); closeSheet(); renderAlpi(); }
+
+/* Gestione calendari regionali (amministratore) */
+function renderAdminCal(){
+  if(!$('adm-cal')) return;
+  const sa=stagioneAttesa();
+  const ok=REGIONI.filter(r=>CAL[r.id]&&CAL[r.id].stagione===sa).length;
+  $('adm-cal-stat').innerHTML=`<b>${ok}</b> di ${REGIONI.length} regioni aggiornate alla stagione ${sa}`;
+  $('adm-cal').innerHTML=REGIONI.map(r=>{const c=CAL[r.id], sug=!c&&CAL_SUGGERITI[r.id];
+    const st=c?(c.stagione===sa?`<span class="pill green">${esc(c.stagione)}</span>`:`<span class="pill amber">${esc(c.stagione||'?')}</span>`):(sug?'<span class="pill amber">Suggerito</span>':'<span class="pill grey">Mancante</span>');
+    return `<div class="reg-adm"><div style="flex:1;min-width:0"><div style="font-weight:600">${esc(r.nome)}</div><div style="font-size:12px;color:var(--text-3)">${c?(c.tipo==='file'?'PDF caricato':'Collegamento')+(c.pubblicato===false?' · nascosto':''):(sug?'Collegamento verificato pronto da confermare':'Da inserire')}</div></div>${st}<button class="btn btn-ghost btn-sm" onclick="editCalReg('${r.id}')">${c?'Modifica':'Inserisci'}</button></div>`;}).join('');
+}
+function editCalReg(id){
+  const c=CAL[id]||{}, sug=CAL_SUGGERITI[id];
+  const tipo=c.tipo||'link';
+  openSheet(`<h3>${esc(regNome(id))}</h3><p class="sub">Incolla il collegamento al calendario ufficiale oppure carica il PDF.</p><div id="cr-msg"></div>
+    <a class="btn btn-soft" style="width:100%;text-decoration:none;margin-bottom:12px" href="${esc(cercaUrl(id))}" target="_blank" rel="noopener"><i class="ti ti-search"></i> Cerca su Google il calendario ${stagioneAttesa()}</a>
+    <div class="field"><label for="cr-st">Stagione</label><input class="input" id="cr-st" value="${esc(c.stagione||stagioneAttesa())}" placeholder="2026/2027"></div>
+    <div class="field"><label>Calendario</label><div class="tabs-auth" style="margin-bottom:10px"><button type="button" id="dt-link" class="${tipo==='link'?'on':''}" onclick="docTipo('link')">Collegamento</button><button type="button" id="dt-file" class="${tipo==='file'?'on':''}" onclick="docTipo('file')">Carica PDF</button></div>
+      <div id="dw-link" class="${tipo==='link'?'':'hidden'}"><input class="input" id="d-url" type="url" placeholder="https://…" value="${esc(c.tipo!=='file'&&c.url?c.url:(sug||''))}">${sug&&!c.url?'<p style="font-size:12px;color:var(--green-700);margin-top:4px">Collegamento ufficiale già trovato e verificato: controlla e salva.</p>':''}</div>
+      <div id="dw-file" class="${tipo==='file'?'':'hidden'}"><input class="input" id="d-file" type="file" accept=".pdf,application/pdf">${c.tipo==='file'&&c.nomeFile?`<p style="font-size:12px;color:var(--text-3);margin-top:4px">File attuale: ${esc(c.nomeFile)}</p>`:''}<div class="progress hidden" id="d-prog"><div></div></div></div></div>
+    <div class="field"><label for="cr-nota">Nota per i cacciatori (facoltativa)</label><textarea class="input" id="cr-nota" maxlength="600" placeholder="Es. integrazioni per la Zona Alpi, preaperture…">${esc(c.nota||'')}</textarea></div>
+    <label class="check"><input type="checkbox" id="cr-pub" ${c.pubblicato!==false?'checked':''}><span>Visibile ai cacciatori</span></label>
+    <div class="foot">${c.url?`<button class="btn btn-danger" onclick="delCalReg('${id}')" aria-label="Rimuovi calendario"><i class="ti ti-trash"></i></button>`:''}<button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" id="b-cr" onclick="salvaCalReg('${id}')"><i class="ti ti-check"></i> Salva</button></div>`);
+}
+async function salvaCalReg(id){
+  const old=CAL[id]||{};
+  const stagione=$('cr-st').value.trim();
+  if(!/^\d{4}\s*\/\s*\d{4}$/.test(stagione)){ msg('cr-msg','err','Scrivi la stagione come 2026/2027.'); return; }
+  const tipo=$('dt-file').classList.contains('on')?'file':'link';
+  const file=$('d-file').files&&$('d-file').files[0];
+  const url=$('d-url').value.trim();
+  if(tipo==='link'&&!/^https?:\/\//i.test(url)){ msg('cr-msg','err','Incolla un collegamento che inizia con https://'); return; }
+  if(tipo==='file'&&!file&&!(old.tipo==='file'&&old.url)){ msg('cr-msg','err','Scegli il PDF da caricare.'); return; }
+  if(file&&file.size>25*1024*1024){ msg('cr-msg','err','Il file supera 25 MB.'); return; }
+  $('b-cr').disabled=true; msg('cr-msg');
+  const rec={regione:regNome(id),stagione:stagione.replace(/\s/g,''),tipo,nota:$('cr-nota').value.trim(),pubblicato:$('cr-pub').checked,
+    aggiornatoTxt:new Date().toLocaleDateString('it-IT'),aggiornatoIl:firebase.firestore.FieldValue.serverTimestamp()};
+  try{
+    if(tipo==='file'&&file){
+      if(!storage) throw {code:'storage/unauthorized'};
+      const path=`app_calendari/${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,'_').slice(-80)}`;
+      $('d-prog').classList.remove('hidden');
+      const task=storage.ref(path).put(file,{contentType:'application/pdf'});
+      task.on('state_changed',s=>{ $('d-prog').firstElementChild.style.width=Math.round(s.bytesTransferred/s.totalBytes*100)+'%'; });
+      await task;
+      rec.url=await storage.ref(path).getDownloadURL(); rec.storagePath=path; rec.nomeFile=file.name;
+      if(old.storagePath&&old.storagePath!==path) storage.ref(old.storagePath).delete().catch(()=>{});
+    }else if(tipo==='link'){
+      rec.url=url; rec.storagePath=firebase.firestore.FieldValue.delete(); rec.nomeFile=firebase.firestore.FieldValue.delete();
+      if(old.storagePath&&storage) storage.ref(old.storagePath).delete().catch(()=>{});
+    }
+    await db.collection('app_calendari').doc(id).set(rec,{merge:true});
+    closeSheet(); toast(`${regNome(id)}: calendario salvato`);
+  }catch(e){ msg('cr-msg','err',erroreIT(e)); $('b-cr').disabled=false; }
+}
+function delCalReg(id){
+  openSheet(`<h3>Rimuovere il calendario?</h3><p class="sub">${esc(regNome(id))}: i cacciatori vedranno di nuovo il pulsante per cercarlo.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="confermaDelCalReg('${id}')"><i class="ti ti-trash"></i> Rimuovi</button></div>`);
+}
+async function confermaDelCalReg(id){
+  const c=CAL[id];
+  try{ await db.collection('app_calendari').doc(id).delete(); if(c&&c.storagePath&&storage) storage.ref(c.storagePath).delete().catch(()=>{}); closeSheet(); toast('Calendario rimosso'); }
+  catch(e){ toast(erroreIT(e)); }
+}
+async function confermaSuggeriti(){
+  const sa=stagioneAttesa(); const ids=Object.keys(CAL_SUGGERITI).filter(id=>!CAL[id]);
+  if(!ids.length){ toast('Collegamenti suggeriti già inseriti'); return; }
+  try{
+    await Promise.all(ids.map(id=>db.collection('app_calendari').doc(id).set({regione:regNome(id),stagione:sa,tipo:'link',url:CAL_SUGGERITI[id],nota:'',pubblicato:true,aggiornatoTxt:new Date().toLocaleDateString('it-IT'),aggiornatoIl:firebase.firestore.FieldValue.serverTimestamp()})));
+    toast(`Inseriti ${ids.length} calendari`);
+  }catch(e){ toast(erroreIT(e)); }
+}
+
+/* ───────── Copie dei documenti (solo sul telefono) ─────────
+   PDF e foto stanno nell'archivio interno del browser (IndexedDB),
+   mai inviati online. Le foto vengono ridotte per occupare poco spazio. */
+const MAX_PDF=10*1024*1024;
+let _idb=null, _allNuovo=null, _allRimuovi=false;
+function idbApri(){
+  if(_idb) return _idb;
+  _idb=new Promise((ok,ko)=>{ try{ const r=indexedDB.open('sfv_allegati',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('allegati');
+    r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error); }catch(e){ ko(e); } });
+  return _idb;
+}
+async function idbOp(mode,fn){ const db=await idbApri(); return new Promise((ok,ko)=>{ const tx=db.transaction('allegati',mode); const st=tx.objectStore('allegati'); const r=fn(st); tx.oncomplete=()=>ok(r&&r.result); tx.onerror=()=>ko(tx.error); }); }
+const allegatoGet=id=>idbOp('readonly',st=>st.get(id));
+const allegatoPut=(id,v)=>idbOp('readwrite',st=>st.put(v,id));
+const allegatoDel=id=>idbOp('readwrite',st=>st.delete(id)).catch(()=>{});
+const allegatoTutti=()=>idbOp('readonly',st=>st.getAllKeys());
+async function riduciFoto(file){
+  try{
+    const img=await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=URL.createObjectURL(file); });
+    const max=1800, k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement('canvas'); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(img.src);
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.82));
+    return blob&&blob.size<file.size?blob:file;
+  }catch(_){ return file; }
+}
+function fileScelto(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+  const pdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+  if(!pdf&&!/^image\//.test(f.type)){ msg('s-msg','err','Puoi allegare un PDF oppure una foto.'); return; }
+  if(pdf&&f.size>MAX_PDF){ msg('s-msg','err','Il PDF supera 10 MB: prova a fotografare il documento.'); return; }
+  _allNuovo=f; _allRimuovi=false; msg('s-msg'); mostraAllegatoForm({nome:f.name||'Foto',tipo:pdf?'pdf':'foto'});
+}
+function mostraAllegatoForm(meta){
+  $('s-all').innerHTML=meta?`<div class="att"><i class="ti ${meta.tipo==='pdf'?'ti-file-type-pdf':'ti-photo'}"></i><span>${esc(meta.nome)}</span><button type="button" class="btn btn-ghost btn-sm" onclick="_allNuovo=null;_allRimuovi=true;mostraAllegatoForm(null)" aria-label="Rimuovi copia"><i class="ti ti-x"></i></button></div>`
+    :`<div class="att-btns"><label class="btn btn-soft btn-sm"><i class="ti ti-camera"></i> Fotografa<input type="file" accept="image/*" capture="environment" class="hidden" onchange="fileScelto(this)"></label><label class="btn btn-soft btn-sm"><i class="ti ti-paperclip"></i> PDF o foto<input type="file" accept="application/pdf,image/*" class="hidden" onchange="fileScelto(this)"></label></div>`;
+}
+async function salvaAllegato(id){
+  if(_allRimuovi){ await allegatoDel(id); return null; }
+  if(!_allNuovo) return undefined;   // nessuna modifica
+  const pdf=_allNuovo.type==='application/pdf'||/\.pdf$/i.test(_allNuovo.name);
+  const blob=pdf?_allNuovo:await riduciFoto(_allNuovo);
+  const meta={nome:pdf?(_allNuovo.name||'documento.pdf'):'Foto del documento',tipo:pdf?'pdf':'foto'};
+  await allegatoPut(id,{blob,...meta});
+  return meta;
+}
+async function apriAllegato(id){
+  const s=leggiScad().find(x=>x.id===id); let a=null;
+  try{ a=await allegatoGet(id); }catch(_){}
+  if(!a||!a.blob){ toast('Copia non trovata su questo telefono'); return; }
+  const url=URL.createObjectURL(a.blob);
+  openSheet(`<h3>${esc(s?s.nome:'Copia del documento')}</h3><p class="sub">Copia salvata solo su questo telefono.</p>
+    ${a.tipo==='foto'?`<img src="${url}" alt="Copia del documento" style="width:100%;border-radius:var(--r-md);border:1px solid var(--border)">`:`<div class="att" style="margin-bottom:4px"><i class="ti ti-file-type-pdf"></i><span>${esc(a.nome)}</span></div>`}
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Chiudi</button><a class="btn btn-primary" style="text-decoration:none" href="${url}" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Apri ${a.tipo==='pdf'?'il PDF':'a schermo intero'}</a></div>`);
+}
+const blobADataUrl=b=>new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ko; r.readAsDataURL(b); });
+async function dataUrlABlob(u){ return (await fetch(u)).blob(); }
+
+/* ───────── Fauna: foto da Wikimedia Commons ─────────
+   Le immagini si caricano dal telefono del cacciatore direttamente da
+   Wikimedia Commons (licenze libere). Autore e licenza di ogni foto sono
+   nella pagina del file, collegata da "Crediti fotografici" nel profilo. */
+const FAUNA=[
+  {id:'camoscio',      nome:'Camoscio',          sci:'Rupicapra rupicapra', file:'Gämse (Rupicapra rupicapra) auf dem Ornach 05.jpg'},
+  {id:'fagiano-monte', nome:'Fagiano di monte',  sci:'Lyrurus tetrix',      file:'Black Grouse Nationalpark Bayerischer Wald.jpg'},
+  {id:'volpe',         nome:'Volpe',             sci:'Vulpes vulpes',       file:'European red fox (Vulpes vulpes).jpg'},
+  {id:'lepre',         nome:'Lepre comune',      sci:'Lepus europaeus',     file:'Brown Hare (Lepus europaeus).jpg'},
+  {id:'starna',        nome:'Starna',            sci:'Perdix perdix',       file:'Perdix perdix (Marek Szczepanek).jpg'},
+  {id:'lepre-bianca',  nome:'Lepre bianca',      sci:'Lepus timidus',       file:'Mountain hare - Lepus timidus.jpg'},
+  {id:'pernice-bianca',nome:'Pernice bianca',    sci:'Lagopus muta',        file:'Lagopus muta, Rock Ptarmigan 01.JPG'},
+  {id:'gallinella',    nome:"Gallinella d'acqua",sci:'Gallinula chloropus', file:"Gallinella d'acqua (Gallinula chloropus) - Common moorhen, Milano, Italia, 08.2018 (8).jpg"},
+  {id:'muflone',       nome:'Muflone',           sci:'Ovis aries musimon',  file:'Mufflon (Ovis ammon musimon).JPG'},
+  {id:'stambecco',     nome:'Stambecco',         sci:'Capra ibex',          file:'Capra ibex in Gran Paradiso National Park.jpg'},
+  {id:'cervo',         nome:'Cervo',             sci:'Cervus elaphus',      file:'Cervus elaphus Luc Viatour 3.jpg'},
+  {id:'capriolo',      nome:'Capriolo',          sci:'Capreolus capreolus', file:'Metskits - Roe Deer - Capreolus capreolus.jpg'},
+  {id:'daino',         nome:'Daino',             sci:'Dama dama',           file:'Fallow Deer (Dama dama).jpg'},
+  {id:'cinghiale',     nome:'Cinghiale',         sci:'Sus scrofa',          file:'Wild boar - Cinghiale (Sus scrofa).jpg'},
+  {id:'gallo-cedrone', nome:'Gallo cedrone',     sci:'Tetrao urogallus',    file:'Tetrao urogallus Richard Bartz.jpg'},
+  {id:'francolino',    nome:'Francolino di monte',sci:'Tetrastes bonasia',  file:'Tetrastes bonasia.jpg'},
+  {id:'coturnice',     nome:'Coturnice',         sci:'Alectoris graeca',    file:'Rock Partridge (Alectoris graeca).jpg'},
+  {id:'fagiano',       nome:'Fagiano',           sci:'Phasianus colchicus', file:'Common pheasant (Phasianus colchicus) male Heligan.jpg'},
+  {id:'germano',       nome:'Germano reale',     sci:'Anas platyrhynchos',  file:'Anas platyrhynchos - Mallard 02.jpg'},
+  {id:'beccaccia',     nome:'Beccaccia',         sci:'Scolopax rusticola',  file:'Scolopax rusticola.jpg'},
+];
+function faunaDi(id){ return FAUNA.find(f=>f.id===id)||FAUNA[0]; }
+function fotoUrl(f,w){ return 'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(f.file.replace(/ /g,'_'))+'?width='+(w||900); }
+function paginaFoto(f){ return 'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(f.file.replace(/ /g,'_')); }
+function specieDelGiorno(){ const d=new Date(), l=VAR.fauna; return faunaDi(l[(d.getFullYear()*372+d.getMonth()*31+d.getDate())%l.length]); }
+function preparaFoto(){
+  document.querySelectorAll('#app [data-fauna]').forEach(el=>{
+    const f=el.dataset.fauna==='oggi'?specieDelGiorno():faunaDi(el.dataset.fauna);
+    const img=el.querySelector('img.ph'); if(!img) return;
+    img.alt=f.nome; img.onerror=()=>{ img.remove(); el.classList.add('no-foto'); };
+    img.src=fotoUrl(f,el.dataset.w||900);
+    const cr=el.querySelector('.ph-nome'); if(cr) cr.textContent=f.nome;
+  });
+}
+function preparaFotoAccesso(){
+  const el=document.querySelector('#auth [data-fauna]'); if(!el) return;
+  const f=faunaDi(el.dataset.fauna), img=el.querySelector('img.ph');
+  img.onerror=()=>img.remove(); img.src=fotoUrl(f,1000);
+}
+function apriFauna(id){
+  const f=faunaDi(id);
+  openSheet(`<div class="fz-big"><img src="${fotoUrl(f,1200)}" alt="${esc(f.nome)}" onerror="this.remove()"></div><h3>${esc(f.nome)}</h3><p class="sub"><i>${esc(f.sci)}</i></p>
+    <p style="font-size:12px;color:var(--text-3)">Foto: <a href="${paginaFoto(f)}" target="_blank" rel="noopener">Wikimedia Commons</a> (autore e licenza nella pagina della foto).</p>
+    <div class="foot"><button class="btn btn-primary" onclick="closeSheet()">Chiudi</button></div>`);
+}
+function apriCrediti(){
+  openSheet(`<h3>Crediti fotografici</h3><p class="sub">Le foto della fauna provengono da Wikimedia Commons e sono pubblicate dai loro autori con licenze libere. Tocca una specie per vedere autore e licenza.</p>
+    <div class="card" style="padding:4px 14px">${VAR.fauna.map(faunaDi).map(f=>`<a class="reg-row" href="${paginaFoto(f)}" target="_blank" rel="noopener"><span class="rn">${esc(f.nome)}</span><i class="ti ti-external-link"></i></a>`).join('')}</div>
+    <div class="foot"><button class="btn btn-primary" onclick="closeSheet()">Chiudi</button></div>`);
+}
+
+/* ───────── Biometria ─────────
+   Schede PDF per specie nella collezione "app_biometria".
+   Ogni scheda: visibile (sì/no) e scaricabile (sì/no), decisi dall'amministratore.
+   Le schede non scaricabili si leggono nel lettore interno (pdf.js), senza
+   pulsante per salvarle. Le schede nascoste non arrivano proprio ai cacciatori. */
+const BIO_GRUPPI=[
+  {id:'ungulati', nome:'Ungulati', specie:['camoscio','muflone','stambecco','cervo','capriolo','daino','cinghiale']},
+  {id:'tetraonidi', nome:'Galliformi alpini', specie:['fagiano-monte','gallo-cedrone','pernice-bianca','francolino','coturnice']},
+];
+let BIO=[], bioSpecie=null;
+function caricaBiometria(){
+  const q=isAdmin?db.collection('app_biometria'):db.collection('app_biometria').where('visibile','==',true);
+  q.onSnapshot(snap=>{
+    BIO=snap.docs.map(d=>({id:d.id,...d.data()})).map(x=>({...x,ms:tsMs(x.creatoIl)})).sort((a,b)=>b.ms-a.ms);
+    renderBio(); renderHomeTiles();
+  },err=>{ console.warn('biometria',err); BIO=[]; renderBio(err); });
+}
+function renderBio(err){
+  if(!$('bio-body')) return;
+  if(bioSpecie){ renderBioSpecie(); return; }
+  $('bio-back').classList.add('hidden');
+  $('bio-hero-t').textContent='Biometria'; $('bio-hero-p').textContent='Schede biometriche per specie, a cura della Scuola Faunistica Venatoria.';
+  impostaHeroBio('stambecco');
+  $('bio-body').innerHTML=(err&&err.code==='permission-denied'?`<div class="msg err"><i class="ti ti-alert-circle"></i><span>Schede non ancora disponibili.</span></div>`:'')+
+    (isAdmin?`<button class="btn btn-primary" style="margin-bottom:6px" onclick="editBio()"><i class="ti ti-file-upload"></i> Carica una scheda</button>`:'')+
+    BIO_GRUPPI.map(g=>`<h3 class="sec">${esc(g.nome)}</h3><div class="cat-grid">${g.specie.map(id=>{const f=faunaDi(id); const n=BIO.filter(b=>b.specie===id&&(b.visibile||!isAdmin)).length; const tot=BIO.filter(b=>b.specie===id).length;
+      return `<button class="cat foto bio-t" onclick="apriBioSpecie('${id}')"><img class="ph" src="${fotoUrl(f,500)}" alt="" loading="lazy" onerror="this.remove()"><b>${esc(f.nome)}</b><span class="cnt"><em class="sci">${esc(f.sci)}</em><br>${isAdmin?`${tot} schede${tot!==n?` · ${tot-n} nascoste`:''}`:(n?`${n} sched${n===1?'a':'e'}`:'Schede in arrivo')}</span></button>`;}).join('')}</div>`).join('');
+}
+function impostaHeroBio(id){
+  const f=faunaDi(id), el=$('bio-hero'), img=el.querySelector('img.ph')||document.createElement('img');
+  img.className='ph'; img.alt=''; img.onerror=()=>img.remove(); if(img.dataset.fid!==id){ img.src=fotoUrl(f,1000); img.dataset.fid=id; }
+  if(!img.parentNode) el.prepend(img);
+  el.querySelector('.ph-nome').textContent=f.nome;
+}
+function apriBioSpecie(id){ bioSpecie=id; renderBio(); window.scrollTo(0,0); }
+function chiudiBioSpecie(){ bioSpecie=null; renderBio(); window.scrollTo(0,0); }
+function renderBioSpecie(){
+  const f=faunaDi(bioSpecie), l=BIO.filter(b=>b.specie===bioSpecie);
+  $('bio-back').classList.remove('hidden');
+  $('bio-hero-t').textContent=f.nome; $('bio-hero-p').textContent=f.sci+' · schede biometriche';
+  impostaHeroBio(bioSpecie);
+  $('bio-body').innerHTML=(isAdmin?`<button class="btn btn-primary" style="margin-bottom:12px" onclick="editBio(null,'${bioSpecie}')"><i class="ti ti-file-upload"></i> Carica una scheda per ${esc(f.nome)}</button>`:'')+
+    (l.length?l.map(b=>`<div class="doc bio-doc ${b.visibile?'':'nascosta'}"><div class="ic"><i class="ti ti-file-type-pdf"></i></div><div class="bd"><div class="tt">${esc(b.titolo)}</div>${b.descrizione?`<div class="ds">${esc(b.descrizione)}</div>`:''}
+        <div class="mt">${b.scaricabile?'<span class="tag ok"><i class="ti ti-download"></i> Scaricabile</span>':'<span class="tag"><i class="ti ti-eye"></i> Solo consultazione</span>'}${isAdmin&&!b.visibile?'<span class="tag no"><i class="ti ti-eye-off"></i> Nascosta ai cacciatori</span>':''}</div>
+        <div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-primary btn-sm" style="width:auto" onclick="leggiPdf('${b.id}')"><i class="ti ti-book-2"></i> Consulta</button>${b.scaricabile?`<a class="btn btn-soft btn-sm" href="${esc(b.url)}" target="_blank" rel="noopener"><i class="ti ti-download"></i> Scarica</a>`:''}
+        ${isAdmin?`<button class="btn btn-ghost btn-sm" onclick="toggleBio('${b.id}','visibile')" title="Visibile ai cacciatori"><i class="ti ${b.visibile?'ti-eye':'ti-eye-off'}"></i> ${b.visibile?'Visibile':'Nascosta'}</button><button class="btn btn-ghost btn-sm" onclick="toggleBio('${b.id}','scaricabile')"><i class="ti ${b.scaricabile?'ti-download':'ti-download-off'}"></i> ${b.scaricabile?'Scaricabile':'Non scaricabile'}</button><button class="btn btn-ghost btn-sm" onclick="editBio('${b.id}')" aria-label="Modifica"><i class="ti ti-pencil"></i></button><button class="btn btn-danger btn-sm" onclick="delBio('${b.id}')" aria-label="Elimina"><i class="ti ti-trash"></i></button>`:''}</div></div></div>`).join('')
+    :`<div class="empty"><i class="ti ti-ruler-measure"></i><b>Nessuna scheda per ora</b>${isAdmin?'Carica la prima scheda con il pulsante qui sopra.':'La Scuola pubblicherà qui le schede biometriche di questa specie.'}</div>`)+
+    `<button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="chiudiBioSpecie()"><i class="ti ti-arrow-left"></i> Tutte le specie</button>`;
+}
+async function toggleBio(id,campo){
+  const b=BIO.find(x=>x.id===id); if(!b) return;
+  try{ await db.collection('app_biometria').doc(id).set({[campo]:!b[campo]},{merge:true});
+    toast(campo==='visibile'?(!b.visibile?'Ora i cacciatori la vedono':'Nascosta ai cacciatori'):(!b.scaricabile?'Ora si può scaricare':'Ora è solo da consultare')); }
+  catch(e){ toast(erroreIT(e)); }
+}
+function editBio(id,specieDef){
+  const b=id?BIO.find(x=>x.id===id):null; const sp=b?b.specie:(specieDef||bioSpecie||'camoscio');
+  openSheet(`<h3>${b?'Modifica scheda':'Carica una scheda'}</h3><p class="sub">Scheda biometrica in PDF.</p><div id="bi-msg"></div>
+    <div class="field"><label for="bi-sp">Specie</label><select class="input" id="bi-sp">${BIO_GRUPPI.map(g=>`<optgroup label="${esc(g.nome)}">${g.specie.map(x=>`<option value="${x}" ${x===sp?'selected':''}>${esc(faunaDi(x).nome)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+    <div class="field"><label for="bi-tit">Titolo</label><input class="input" id="bi-tit" maxlength="140" value="${b?esc(b.titolo):''}" placeholder="Es. Scheda di rilevamento biometrico"></div>
+    <div class="field"><label for="bi-desc">Descrizione (facoltativa)</label><textarea class="input" id="bi-desc" maxlength="400">${b?esc(b.descrizione||''):''}</textarea></div>
+    <div class="field"><label for="d-file">File PDF</label><input class="input" id="d-file" type="file" accept=".pdf,application/pdf">${b&&b.nomeFile?`<p style="font-size:12px;color:var(--text-3);margin-top:4px">File attuale: ${esc(b.nomeFile)}. Scegline uno solo per sostituirlo.</p>`:''}<div class="progress hidden" id="d-prog"><div></div></div></div>
+    <div class="bio-sw">
+      <label class="check"><input type="checkbox" id="bi-vis" ${!b||b.visibile?'checked':''}><span><b>Visibile ai cacciatori</b><br>Se la togli, la scheda resta solo a te.</span></label>
+      <label class="check"><input type="checkbox" id="bi-dl" ${b&&b.scaricabile?'checked':''}><span><b>Scaricabile</b><br>Se la togli, si può solo consultare dentro l'app.</span></label>
+    </div>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" id="b-bio" onclick="salvaBio('${b?b.id:''}')"><i class="ti ti-check"></i> ${b?'Salva':'Pubblica'}</button></div>`);
+}
+async function salvaBio(id){
+  const old=id?BIO.find(x=>x.id===id):null;
+  const titolo=$('bi-tit').value.trim(), file=$('d-file').files&&$('d-file').files[0];
+  if(!titolo){ msg('bi-msg','err','Scrivi il titolo della scheda.'); return; }
+  if(!file&&!(old&&old.url)){ msg('bi-msg','err','Scegli il PDF da caricare.'); return; }
+  if(file&&!(file.type==='application/pdf'||/\.pdf$/i.test(file.name))){ msg('bi-msg','err','Il file deve essere un PDF.'); return; }
+  if(file&&file.size>25*1024*1024){ msg('bi-msg','err','Il PDF supera 25 MB.'); return; }
+  $('b-bio').disabled=true; msg('bi-msg');
+  const ref=id?db.collection('app_biometria').doc(id):db.collection('app_biometria').doc();
+  const rec={specie:$('bi-sp').value,titolo,descrizione:$('bi-desc').value.trim(),visibile:$('bi-vis').checked,scaricabile:$('bi-dl').checked,aggiornatoIl:firebase.firestore.FieldValue.serverTimestamp()};
+  try{
+    if(file){
+      if(!storage) throw {code:'storage/unauthorized'};
+      const path=`app_biometria/${ref.id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,'_').slice(-80)}`;
+      $('d-prog').classList.remove('hidden');
+      const task=storage.ref(path).put(file,{contentType:'application/pdf'});
+      task.on('state_changed',s=>{ $('d-prog').firstElementChild.style.width=Math.round(s.bytesTransferred/s.totalBytes*100)+'%'; });
+      await task;
+      rec.url=await storage.ref(path).getDownloadURL(); rec.storagePath=path; rec.nomeFile=file.name;
+      if(old&&old.storagePath) storage.ref(old.storagePath).delete().catch(()=>{});
+    }
+    if(!id) rec.creatoIl=firebase.firestore.FieldValue.serverTimestamp();
+    await ref.set(rec,{merge:true});
+    closeSheet(); toast(id?'Scheda aggiornata':'Scheda pubblicata');
+  }catch(e){ msg('bi-msg','err',erroreIT(e)); $('b-bio').disabled=false; }
+}
+function delBio(id){
+  const b=BIO.find(x=>x.id===id); if(!b) return;
+  openSheet(`<h3>Eliminare la scheda?</h3><p class="sub">“${esc(b.titolo)}” sparisce dall'app di tutti.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="confermaDelBio('${id}')"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+async function confermaDelBio(id){
+  const b=BIO.find(x=>x.id===id);
+  try{ await db.collection('app_biometria').doc(id).delete(); if(b&&b.storagePath&&storage) storage.ref(b.storagePath).delete().catch(()=>{}); closeSheet(); toast('Scheda eliminata'); }
+  catch(e){ toast(erroreIT(e)); }
+}
+
+/* Lettore PDF interno: pagine disegnate come immagini, senza pulsante per salvare */
+let _pdfLib=null, _pdfDoc=null, _pdfZoom=1;
+function caricaPdfJs(){
+  if(_pdfLib) return _pdfLib;
+  _pdfLib=new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); };
+    s.onerror=()=>{ _pdfLib=null; ko(new Error('pdfjs')); }; document.head.appendChild(s); });
+  return _pdfLib;
+}
+async function leggiPdf(id){
+  const b=BIO.find(x=>x.id===id); if(!b||!b.url) return;
+  const v=document.createElement('div'); v.id='pdf-viewer'; v.className='pdfv';
+  v.innerHTML=`<div class="pdfv-bar"><button class="pdfv-btn" onclick="chiudiPdf()" aria-label="Chiudi"><i class="ti ti-x"></i></button><div class="pdfv-t">${esc(b.titolo)}</div><button class="pdfv-btn" onclick="zoomPdf(-1)" aria-label="Riduci"><i class="ti ti-zoom-out"></i></button><button class="pdfv-btn" onclick="zoomPdf(1)" aria-label="Ingrandisci"><i class="ti ti-zoom-in"></i></button>${b.scaricabile?`<a class="pdfv-btn" href="${esc(b.url)}" target="_blank" rel="noopener" aria-label="Scarica"><i class="ti ti-download"></i></a>`:''}</div><div class="pdfv-pages" id="pdfv-pages" oncontextmenu="return false"><div class="loading" style="color:#C7DDA6"><i class="ti ti-loader-2 spin"></i> Apertura della scheda…</div></div>`;
+  document.body.appendChild(v); document.body.style.overflow='hidden';
+  try{
+    const lib=await caricaPdfJs();
+    _pdfDoc=await lib.getDocument({url:b.url}).promise; _pdfZoom=1;
+    await disegnaPdf();
+  }catch(e){
+    console.warn('pdf',e);
+    $('pdfv-pages').innerHTML=`<div class="empty" style="color:#C7DDA6"><i class="ti ti-file-alert"></i><b style="color:#fff">Non riesco ad aprire la scheda</b>Controlla la connessione e riprova.${isAdmin?'<br><br>Per l\'amministratore: se succede sempre, va attivato l\'accesso ai PDF dal browser (CORS) come spiegato nelle istruzioni.':''}</div>`;
+  }
+}
+async function disegnaPdf(){
+  const box=$('pdfv-pages'); if(!box||!_pdfDoc) return;
+  box.innerHTML='';
+  const w=Math.min(box.clientWidth-24,900)*_pdfZoom, dpr=Math.min(window.devicePixelRatio||1,2);
+  for(let i=1;i<=_pdfDoc.numPages;i++){
+    const pg=await _pdfDoc.getPage(i); const v1=pg.getViewport({scale:1}); const sc=w/v1.width; const vp=pg.getViewport({scale:sc*dpr});
+    const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height; c.style.width=(vp.width/dpr)+'px'; c.style.height=(vp.height/dpr)+'px';
+    box.appendChild(c); await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    if(!$('pdfv-pages')) return;
+  }
+}
+function zoomPdf(d){ _pdfZoom=Math.max(.6,Math.min(3,_pdfZoom+(d>0?.4:-.4))); disegnaPdf(); }
+function chiudiPdf(){ const v=$('pdf-viewer'); if(v) v.remove(); document.body.style.overflow=''; if(_pdfDoc){ try{_pdfDoc.destroy();}catch(_){} _pdfDoc=null; } }
+
+/* Motore balistico (punto materiale, modelli G1/G7). Unità SI. */
+const BAL_TAB={"G1": [[0.0, 0.2629], [0.05, 0.2558], [0.1, 0.2487], [0.15, 0.2413], [0.2, 0.2344], [0.25, 0.2278], [0.3, 0.2214], [0.35, 0.2155], [0.4, 0.2104], [0.45, 0.2061], [0.5, 0.2032], [0.55, 0.202], [0.6, 0.2034], [0.7, 0.2165], [0.725, 0.223], [0.75, 0.2313], [0.775, 0.2417], [0.8, 0.2546], [0.825, 0.2706], [0.85, 0.2901], [0.875, 0.3136], [0.9, 0.3415], [0.925, 0.3734], [0.95, 0.4084], [0.975, 0.4448], [1.0, 0.4805], [1.025, 0.5136], [1.05, 0.5427], [1.075, 0.5677], [1.1, 0.5883], [1.125, 0.6053], [1.15, 0.6191], [1.2, 0.6393], [1.25, 0.6518], [1.3, 0.6589], [1.35, 0.6621], [1.4, 0.6625], [1.45, 0.6607], [1.5, 0.6573], [1.55, 0.6528], [1.6, 0.6474], [1.65, 0.6413], [1.7, 0.6347], [1.75, 0.628], [1.8, 0.621], [1.85, 0.6141], [1.9, 0.6072], [1.95, 0.6003], [2.0, 0.5934], [2.05, 0.5867], [2.1, 0.5804], [2.15, 0.5743], [2.2, 0.5685], [2.25, 0.563], [2.3, 0.5577], [2.35, 0.5527], [2.4, 0.5481], [2.45, 0.5438], [2.5, 0.5397], [2.6, 0.5325], [2.7, 0.5264], [2.8, 0.5211], [2.9, 0.5168], [3.0, 0.5133], [3.1, 0.5105], [3.2, 0.5084], [3.3, 0.5067], [3.4, 0.5054], [3.5, 0.504], [3.6, 0.503], [3.7, 0.5022], [3.8, 0.5016], [3.9, 0.501], [4.0, 0.5006], [4.2, 0.4998], [4.4, 0.4995], [4.6, 0.4992], [4.8, 0.499], [5.0, 0.4988]], "G7": [[0.0, 0.1198], [0.05, 0.1197], [0.1, 0.1196], [0.15, 0.1194], [0.2, 0.1193], [0.25, 0.1194], [0.3, 0.1194], [0.35, 0.1194], [0.4, 0.1193], [0.45, 0.1193], [0.5, 0.1194], [0.55, 0.1193], [0.6, 0.1194], [0.65, 0.1197], [0.7, 0.1202], [0.725, 0.1207], [0.75, 0.1215], [0.775, 0.1226], [0.8, 0.1242], [0.825, 0.1266], [0.85, 0.1306], [0.875, 0.1368], [0.9, 0.1464], [0.925, 0.166], [0.95, 0.2054], [0.975, 0.2993], [1.0, 0.3803], [1.025, 0.4015], [1.05, 0.4043], [1.075, 0.4034], [1.1, 0.4014], [1.125, 0.3987], [1.15, 0.3955], [1.2, 0.3884], [1.25, 0.381], [1.3, 0.3732], [1.35, 0.3657], [1.4, 0.358], [1.5, 0.344], [1.55, 0.3376], [1.6, 0.3315], [1.65, 0.326], [1.7, 0.3209], [1.75, 0.316], [1.8, 0.3117], [1.85, 0.3078], [1.9, 0.3042], [1.95, 0.301], [2.0, 0.298], [2.05, 0.2951], [2.1, 0.2922], [2.15, 0.2892], [2.2, 0.2864], [2.25, 0.2835], [2.3, 0.2807], [2.35, 0.2779], [2.4, 0.2752], [2.45, 0.2725], [2.5, 0.2697], [2.55, 0.267], [2.6, 0.2643], [2.65, 0.2615], [2.7, 0.2588], [2.75, 0.2561], [2.8, 0.2533], [2.85, 0.2506], [2.9, 0.2479], [2.95, 0.2451], [3.0, 0.2424], [3.1, 0.2368], [3.2, 0.2313], [3.3, 0.2258], [3.4, 0.2205], [3.5, 0.2154], [3.6, 0.2106], [3.7, 0.206], [3.8, 0.2017], [3.9, 0.1975], [4.0, 0.1935], [4.2, 0.1861], [4.4, 0.1793], [4.6, 0.173], [4.8, 0.1672], [5.0, 0.1618]]};
+function balCd(mod,mach){ const t=BAL_TAB[mod]||BAL_TAB.G1; if(mach<=t[0][0]) return t[0][1];
+  for(let i=1;i<t.length;i++){ if(mach<=t[i][0]){ const [m0,c0]=t[i-1],[m1,c1]=t[i]; return c0+(c1-c0)*(mach-m0)/(m1-m0); } } return t[t.length-1][1]; }
+function balAria(tempC,quotaM,pressHpa){
+  const T=tempC+273.15;
+  const p=(pressHpa&&pressHpa>500)?pressHpa*100:101325*Math.pow(1-2.25577e-5*Math.max(0,quotaM||0),5.25588);
+  return {rho:p/(287.05*T), suono:331.3*Math.sqrt(1+tempC/273.15), p};
+}
+/* Simula un tiro: angolo di lancio a (rad, rispetto all'orizzontale), linea di mira inclinata th (rad).
+   Restituisce i punti lungo la linea di mira fino a sMax metri. */
+function balVolo(c,a,th,sMax,passo){
+  const aria=balAria(c.temp,c.quota,c.press), k=aria.rho*Math.PI/(8*c.bc*703.0696);
+  const vwx=c.ventoX||0, vwz=c.ventoZ||0;      // vento: componente lungo il tiro e trasversale (m/s)
+  let x=c.hOtt*Math.sin(th), y=-c.hOtt*Math.cos(th), z=0;
+  let vx=c.v0*Math.cos(a), vy=c.v0*Math.sin(a), vz=0, t=0;
+  const out=[]; let prossimo=0; const dt=0.0004;
+  const ct=Math.cos(th), st=Math.sin(th);
+  for(let n=0;n<200000;n++){
+    const s=x*ct+y*st;
+    if(s>=prossimo){
+      const h=-x*st+y*ct, v=Math.hypot(vx,vy,vz);
+      out.push({s:prossimo,h,z,t,v});
+      prossimo+=passo; if(prossimo>sMax+1e-9) break;
+    }
+    const rx=vx-vwx, ry=vy, rz=vz-vwz, vr=Math.hypot(rx,ry,rz);
+    const dr=k*balCd(c.mod,vr/aria.suono)*vr;
+    vx+=-dr*rx*dt; vy+=(-dr*ry-9.80665)*dt; vz+=-dr*rz*dt;
+    x+=vx*dt; y+=vy*dt; z+=vz*dt; t+=dt;
+    if(vx<=0||t>10) break;
+  }
+  return out;
+}
+/* Angolo di azzeramento: la palla attraversa la linea di mira (orizzontale) alla distanza di azzeramento */
+function balZero(c){
+  const cz={...c,ventoX:0,ventoZ:0};
+  let lo=-0.01, hi=0.05;
+  for(let i=0;i<60;i++){ const m=(lo+hi)/2; const p=balVolo(cz,m,0,c.zero,c.zero); const h=p.length>1?p[p.length-1].h:-1; if(h>0) hi=m; else lo=m; }
+  return (lo+hi)/2;
+}
+/* Calcolo completo per un tiro */
+function balCalcola(c){
+  const th=(c.angolo||0)*Math.PI/180, a0=balZero(c);
+  const dir=(c.ventoOre||3)%12*Math.PI/6, vw=(c.ventoKmh||0)/3.6;
+  const cc={...c,ventoX:-vw*Math.cos(dir),ventoZ:-vw*Math.sin(dir)};
+  const pt=balVolo(cc,a0+th,th,c.dist,c.dist);
+  const p=pt[pt.length-1];
+  if(!p||p.s<c.dist-0.5) return null;
+  // distanza equivalente in piano: la distanza che, in piano, dà la stessa caduta
+  let eq=c.dist;
+  if(Math.abs(c.angolo||0)>0.5){
+    const h0=balVolo({...c,ventoX:0,ventoZ:0},a0+th,th,c.dist,c.dist).pop().h;
+    const piano=balVolo({...c,ventoX:0,ventoZ:0},a0,0,Math.max(c.dist,c.zero)+5,1);
+    eq=0; for(const q of piano){ if(q.s>=Math.min(c.zero,c.dist)&&q.h<=h0){ eq=q.s; break; } }
+    if(!eq) eq=c.dist*Math.cos(th);
+  }
+  const massa=c.grani*0.06479891/1000;
+  return {dist:c.dist, orizz:c.dist*Math.cos(th), equiv:eq, cadutaCm:p.h*100, derivaCm:p.z*100,
+    mrad:-Math.atan2(p.h,p.s)*1000, moa:-Math.atan2(p.h,p.s)*180/Math.PI*60, derivaMrad:Math.atan2(p.z,p.s)*1000,
+    v:p.v, energia:0.5*massa*p.v*p.v, t:p.t, e0:0.5*massa*c.v0*c.v0};
+}
+function balTabella(c,max,passo){
+  const th=(c.angolo||0)*Math.PI/180, a0=balZero(c);
+  const dir=(c.ventoOre||3)%12*Math.PI/6, vw=(c.ventoKmh||0)/3.6;
+  const massa=c.grani*0.06479891/1000;
+  return balVolo({...c,ventoX:-vw*Math.cos(dir),ventoZ:-vw*Math.sin(dir)},a0+th,th,max,passo).filter(p=>p.s>0)
+    .map(p=>({s:p.s,cadutaCm:p.h*100,derivaCm:p.z*100,mrad:-Math.atan2(p.h,p.s)*1000,moa:-Math.atan2(p.h,p.s)*10800/Math.PI,v:p.v,energia:0.5*massa*p.v*p.v}));
+}
+
+/* ───────── Distanza reale di tiro (calcolatore balistico) ─────────
+   Profili arma e ultimo tiro salvati solo sul telefono. */
+const CAL_PRESET=[
+  ['.243 Win – 100 gr',100,0.405,'G1',900],['6,5x55 SE – 140 gr',140,0.500,'G1',820],['6,5 Creedmoor – 143 gr',143,0.625,'G1',820],
+  ['.270 Win – 130 gr',130,0.440,'G1',930],['7x64 – 162 gr',162,0.500,'G1',850],['7 mm Rem Mag – 162 gr',162,0.600,'G1',900],
+  ['.308 Win – 150 gr',150,0.400,'G1',860],['.308 Win – 165 gr',165,0.450,'G1',820],['.30-06 – 165 gr',165,0.450,'G1',860],
+  ['.30-06 – 180 gr',180,0.480,'G1',820],['8x57 IS – 196 gr',196,0.380,'G1',760],['.300 Win Mag – 180 gr',180,0.480,'G1',900],
+  ['9,3x62 – 286 gr',286,0.360,'G1',700],
+];
+const CLIC=[{id:'cm',nome:'1 cm a 100 m (0,1 mrad)',mrad:0.1},{id:'q',nome:'1/4 MOA',moa:0.25},{id:'o',nome:'1/8 MOA',moa:0.125}];
+const LS_ARMI='sfv_armi_v1', LS_TIRO='sfv_tiro_v1';
+function leggiArmi(){ try{ return JSON.parse(localStorage.getItem(LS_ARMI)||'[]'); }catch(_){ return []; } }
+function salvaArmi(l){ try{ localStorage.setItem(LS_ARMI,JSON.stringify(l)); }catch(_){} }
+function armaDefault(){ return {id:'',nome:'',cal:'.308 Win – 150 gr',grani:150,bc:0.400,mod:'G1',v0:860,hOtt:4.5,zero:100,clic:'cm'}; }
+function leggiTiro(){ try{ return {dist:200,angolo:0,ventoKmh:0,ventoOre:3,temp:10,quota:500,armaId:'',...JSON.parse(localStorage.getItem(LS_TIRO)||'{}')}; }catch(_){ return {dist:200,angolo:0,ventoKmh:0,ventoOre:3,temp:10,quota:500,armaId:''}; } }
+let _arma=null, LIMITI=[];
+function caricaLimiti(){
+  db.collection('app_config').doc('tiro').onSnapshot(d=>{ LIMITI=((d.exists&&d.data().specie)||[]).filter(x=>x&&x.nome); if($('v-tiro').classList.contains('on')) renderTiro(); if(isAdmin) renderAdminLimiti(); },()=>{ LIMITI=[]; if(isAdmin) renderAdminLimiti(); });
+}
+function renderAdminLimiti(){
+  const el=$('adm-lim'); if(!el) return;
+  el.innerHTML=LIMITI.length?`<table class="mini"><thead><tr><th>Specie</th><th>Distanza max</th><th>Energia min</th></tr></thead><tbody>${LIMITI.map(l=>`<tr><td>${esc(l.nome)}</td><td>${l.distMax?l.distMax+' m':'–'}</td><td>${l.energiaMin?Number(l.energiaMin).toLocaleString('it-IT')+' J':'–'}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:13px;color:var(--text-3)">Nessun limite impostato: nel calcolo del tiro non compare la scelta della specie.</p>';
+}
+function editLimiti(){
+  const base=LIMITI.length?LIMITI:['Capriolo','Camoscio','Cervo','Daino','Muflone','Cinghiale'].map(nome=>({nome,distMax:'',energiaMin:'',nota:''}));
+  window._lim=JSON.parse(JSON.stringify(base));
+  openSheet(`<h3>Limiti per il tiro</h3><p class="sub">Per ogni specie indica la distanza massima e l'energia minima al bersaglio che vuoi raccomandare. Lascia vuoto ciò che non serve.</p><div id="li-msg"></div><div id="li-righe"></div>
+    <button class="btn btn-soft" style="width:100%;margin-top:4px" onclick="limLeggi();window._lim.push({nome:'',distMax:'',energiaMin:'',nota:''});limRender()"><i class="ti ti-plus"></i> Aggiungi specie</button>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" id="b-li" onclick="salvaLimiti()"><i class="ti ti-check"></i> Salva</button></div>`);
+  const bg=document.querySelector('.sheet-bg'); if(bg) bg.onclick=null;
+  limRender();
+}
+function limRender(){
+  $('li-righe').innerHTML=window._lim.map((l,i)=>`<div class="ce-row"><div style="display:flex;gap:8px"><input class="input" id="li-n-${i}" value="${esc(l.nome)}" placeholder="Specie" aria-label="Specie"><button class="btn btn-danger btn-sm" onclick="limLeggi();window._lim.splice(${i},1);limRender()" aria-label="Rimuovi"><i class="ti ti-trash"></i></button></div>
+    <div class="row2"><div class="tin"><input class="input" id="li-d-${i}" inputmode="numeric" value="${l.distMax||''}" placeholder="Distanza max" aria-label="Distanza massima"><span>m</span></div><div class="tin"><input class="input" id="li-e-${i}" inputmode="numeric" value="${l.energiaMin||''}" placeholder="Energia min" aria-label="Energia minima"><span>J</span></div></div>
+    <input class="input" id="li-t-${i}" value="${esc(l.nota||'')}" placeholder="Nota (facoltativa)" aria-label="Nota"></div>`).join('');
+}
+function limLeggi(){ const n=v=>{ const x=parseInt(String(v).replace(/\D/g,''),10); return isFinite(x)&&x>0?x:''; };
+  window._lim=window._lim.map((l,i)=>({nome:$('li-n-'+i).value.trim(),distMax:n($('li-d-'+i).value),energiaMin:n($('li-e-'+i).value),nota:$('li-t-'+i).value.trim()})); }
+async function salvaLimiti(){
+  limLeggi(); const specie=window._lim.filter(l=>l.nome&&(l.distMax||l.energiaMin));
+  $('b-li').disabled=true;
+  try{ await db.collection('app_config').doc('tiro').set({specie,aggiornatoIl:firebase.firestore.FieldValue.serverTimestamp()}); closeSheet(); toast('Limiti salvati'); }
+  catch(e){ msg('li-msg','err',erroreIT(e)); $('b-li').disabled=false; }
+}
+function renderTiro(nuova){
+  const armi=leggiArmi(), tiro=leggiTiro();
+  _arma=nuova?armaDefault():(armi.find(a=>a.id===tiro.armaId)||armi[0]||armaDefault());
+  const a=_arma, num=(id,v,step,min,max,suf)=>`<div class="tin"><input class="input" id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${String(v).replace('.',',')}" oninput="ricalcola()"><span>${suf}</span></div>`;
+  $('tiro-body').innerHTML=`
+  <div class="card tcard">
+    <div class="thd"><i class="ti ti-target-arrow"></i><b>La tua arma</b>${armi.length?`<select class="input tsel" id="t-arma" onchange="scegliArma(this.value)">${armi.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.nome)}</option>`).join('')}<option value="__nuova" ${!a.id?'selected':''}>+ Nuovo profilo</option></select>`:''}</div>
+    <div class="field"><label for="t-cal">Calibro e palla</label><select class="input" id="t-cal" onchange="presetCal(this.value)">${CAL_PRESET.map(p=>`<option ${p[0]===a.cal?'selected':''}>${p[0]}</option>`).join('')}<option value="__altro" ${CAL_PRESET.some(p=>p[0]===a.cal)?'':'selected'}>Altro (inserisco io i dati)</option></select>
+      <p class="hint">I valori proposti sono tipici. Per un calcolo esatto copia peso, coefficiente balistico e velocità dalla scatola delle tue cartucce o dal sito del produttore.</p></div>
+    <div class="row2"><div class="field"><label for="t-gr">Peso della palla</label>${num('t-gr',a.grani,1,20,600,'grani')}<p class="hint" id="t-g"></p></div>
+      <div class="field"><label for="t-v0">Velocità alla bocca</label>${num('t-v0',a.v0,1,200,1400,'m/s')}</div></div>
+    <div class="row2"><div class="field"><label for="t-bc">Coefficiente balistico</label>${num('t-bc',a.bc,0.001,0.05,1.5,'')}</div>
+      <div class="field"><label for="t-mod">Modello</label><select class="input" id="t-mod" onchange="ricalcola()"><option ${a.mod==='G1'?'selected':''}>G1</option><option ${a.mod==='G7'?'selected':''}>G7</option></select></div></div>
+    <div class="row2"><div class="field"><label for="t-h">Altezza ottica sulla canna</label>${num('t-h',a.hOtt,0.1,1,15,'cm')}</div>
+      <div class="field"><label for="t-z">Azzeramento</label>${num('t-z',a.zero,1,25,400,'m')}</div></div>
+    <div class="field"><label for="t-clic">Clic della torretta</label><select class="input" id="t-clic" onchange="ricalcola()">${CLIC.map(c=>`<option value="${c.id}" ${a.clic===c.id?'selected':''}>${c.nome}</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-soft btn-sm" style="flex:1" onclick="salvaArma()"><i class="ti ti-device-floppy"></i> ${a.id?'Aggiorna profilo':'Salva come profilo'}</button>${a.id?`<button class="btn btn-ghost btn-sm" onclick="eliminaArma()" aria-label="Elimina profilo"><i class="ti ti-trash"></i></button>`:''}</div>
+  </div>
+
+  <div class="card tcard">
+    <div class="thd"><i class="ti ti-ruler-2"></i><b>Il tiro</b></div>
+    ${LIMITI.length?`<div class="field"><label for="t-sp">Specie</label><select class="input" id="t-sp" onchange="ricalcola()"><option value="">Nessuna (solo calcolo)</option>${LIMITI.map((l,k)=>`<option value="${k}" ${tiro.specie===l.nome?'selected':''}>${esc(l.nome)}</option>`).join('')}</select><p class="hint">Confronta il tiro con i limiti indicati dalla Scuola per questa specie.</p></div>`:''}
+    <div class="field"><label for="t-d">Distanza misurata col telemetro</label>${num('t-d',tiro.dist,1,10,1000,'m')}</div>
+    <div class="field"><label for="t-ang">Angolo di sito <span id="t-ang-v" class="angv"></span></label>
+      <input type="range" id="t-ang" min="-50" max="50" step="1" value="${tiro.angolo}" oninput="ricalcola()" class="rng"><div class="rng-l"><span>Discesa</span><span>In piano</span><span>Salita</span></div></div>
+    <div class="row2"><div class="field"><label for="t-w">Vento</label>${num('t-w',tiro.ventoKmh,1,0,80,'km/h')}</div>
+      <div class="field"><label for="t-wo">Da dove arriva</label><select class="input" id="t-wo" onchange="ricalcola()">${[[12,'Di fronte (ore 12)'],[1,'Ore 1'],[2,'Ore 2'],[3,'Da destra (ore 3)'],[4,'Ore 4'],[5,'Ore 5'],[6,'Alle spalle (ore 6)'],[7,'Ore 7'],[8,'Ore 8'],[9,'Da sinistra (ore 9)'],[10,'Ore 10'],[11,'Ore 11']].map(([o,n])=>`<option value="${o}" ${+tiro.ventoOre===o?'selected':''}>${n}</option>`).join('')}</select></div></div>
+    <div class="row2"><div class="field"><label for="t-t">Temperatura</label>${num('t-t',tiro.temp,1,-30,45,'°C')}</div>
+      <div class="field"><label for="t-q">Quota</label>${num('t-q',tiro.quota,10,0,4500,'m')}</div></div>
+  </div>
+  <div id="tiro-ris"></div>`;
+  ricalcola();
+}
+function presetCal(v){ const p=CAL_PRESET.find(x=>x[0]===v); if(p){ $('t-gr').value=p[1]; $('t-bc').value=p[2]; $('t-mod').value=p[3]; $('t-v0').value=p[4]; } ricalcola(); }
+function datiArma(){ const n=id=>parseFloat(String($(id).value).replace(',','.'));
+  return {cal:$('t-cal').value,grani:n('t-gr'),bc:n('t-bc'),mod:$('t-mod').value,v0:n('t-v0'),hOtt:n('t-h'),zero:n('t-z'),clic:$('t-clic').value}; }
+function datiTiro(){ const n=id=>parseFloat(String($(id).value).replace(',','.'));
+  return {dist:n('t-d'),angolo:n('t-ang'),ventoKmh:n('t-w')||0,ventoOre:+$('t-wo').value,temp:n('t-t'),quota:n('t-q')||0}; }
+let _tRic=null;
+function ricalcola(){ clearTimeout(_tRic); _tRic=setTimeout(ricalcolaOra,120); }
+function ricalcolaOra(){
+  if(!$('t-d')) return;
+  const A=datiArma(), T=datiTiro();
+  $('t-ang-v').textContent=T.angolo>0?`salita ${T.angolo}°`:T.angolo<0?`discesa ${-T.angolo}°`:'in piano';
+  $('t-g').textContent=isFinite(A.grani)?`= ${(A.grani*0.06479891).toFixed(1).replace('.',',')} g`:'';
+  const lim=$('t-sp')&&$('t-sp').value!==''?LIMITI[+$('t-sp').value]:null;
+  try{ localStorage.setItem(LS_TIRO,JSON.stringify({...T,armaId:_arma&&_arma.id||'',specie:lim?lim.nome:''})); }catch(_){}
+  const bad=[[A.grani,20,600],[A.v0,200,1400],[A.bc,0.05,1.5],[A.hOtt,1,15],[A.zero,25,400],[T.dist,10,1000],[T.temp,-30,45],[T.quota,0,4500]].some(([v,a,b])=>!isFinite(v)||v<a||v>b);
+  if(bad){ $('tiro-ris').innerHTML=`<div class="msg err"><i class="ti ti-alert-circle"></i><span>Controlla i dati: c'è un valore mancante o fuori misura.</span></div>`; return; }
+  const c={mod:A.mod,bc:A.bc,v0:A.v0,grani:A.grani,hOtt:A.hOtt/100,zero:A.zero,temp:T.temp,quota:T.quota,press:0,angolo:T.angolo,ventoKmh:T.ventoKmh,ventoOre:T.ventoOre,dist:T.dist};
+  const r=balCalcola(c);
+  if(!r){ $('tiro-ris').innerHTML=`<div class="msg err"><i class="ti ti-alert-circle"></i><span>Con questi dati la palla non arriva a ${T.dist} m.</span></div>`; return; }
+  const ck=CLIC.find(x=>x.id===A.clic)||CLIC[0];
+  const clic=v=>Math.round(Math.abs(ck.mrad?v.mrad/ck.mrad:v.moa/ck.moa));
+  const cm=x=>Math.abs(x).toFixed(Math.abs(x)<10?1:0).replace('.',',');
+  const su=r.cadutaCm<0;
+  const dMrad=r.derivaMrad, dClic=Math.round(Math.abs(ck.mrad?dMrad/ck.mrad:dMrad*3.43775/ck.moa));
+  const tab=balTabella(c,Math.min(Math.max(300,Math.ceil(T.dist/50)*50),800),50);
+  const vicino=tab.reduce((m,p)=>Math.abs(p.s-T.dist)<Math.abs(m.s-T.dist)?p:m,tab[0]||{s:0});
+  $('tiro-ris').innerHTML=`
+  <div class="tris">
+    <div class="tris-top"><div><div class="eyebrow" style="color:var(--green-200)">Distanza reale di tiro</div><div class="tris-big">${Math.round(Math.abs(T.angolo)>0.5?r.equiv:T.dist)} <small>m</small></div>
+      <div class="tris-sub">${Math.abs(T.angolo)>0.5?`Misurata ${T.dist} m con angolo di ${Math.abs(T.angolo)}°: tira come se fosse a ${Math.round(r.equiv)} m in piano (distanza orizzontale ${Math.round(r.orizz)} m).`:'Tiro in piano: la distanza reale coincide con quella misurata.'}</div></div></div>
+    <div class="tris-grid">
+      <div class="tbox"><span>Correzione in altezza</span><b>${Math.abs(r.cadutaCm)<0.5?'Nessuna':`${cm(r.cadutaCm)} cm ${su?'più in alto':'più in basso'}`}</b><i>${Math.abs(r.cadutaCm)<0.5?'Mira al punto':`${clic(r)} clic ${su?'in alto (UP)':'in basso'} · ${Math.abs(r.mrad).toFixed(1).replace('.',',')} mrad · ${Math.abs(r.moa).toFixed(1).replace('.',',')} MOA`}</i></div>
+      <div class="tbox"><span>Vento</span><b>${T.ventoKmh&&Math.abs(r.derivaCm)>=0.5?`${cm(r.derivaCm)} cm ${r.derivaCm<0?'a destra':'a sinistra'}`:'Nessuna'}</b><i>${T.ventoKmh&&Math.abs(r.derivaCm)>=0.5?`La palla devia a ${r.derivaCm<0?'sinistra':'destra'}: correggi di ${dClic} clic`:'Senza vento laterale'}</i></div>
+      <div class="tbox"><span>Energia al bersaglio</span><b>${Math.round(r.energia).toLocaleString('it-IT')} J</b><i>${Math.round(r.energia/r.e0*100)}% di quella alla bocca</i></div>
+      <div class="tbox"><span>Velocità al bersaglio</span><b>${Math.round(r.v)} m/s</b><i>Tempo di volo ${r.t.toFixed(2).replace('.',',')} s</i></div>
+    </div>
+  </div>
+  ${lim?(()=>{ const dReale=Math.abs(T.angolo)>0.5?r.equiv:T.dist, pb=[];
+      if(lim.distMax&&T.dist>lim.distMax) pb.push(`la distanza (${T.dist} m) supera il massimo di ${lim.distMax} m`);
+      if(lim.energiaMin&&r.energia<lim.energiaMin) pb.push(`l'energia al bersaglio (${Math.round(r.energia).toLocaleString('it-IT')} J) è sotto il minimo di ${Number(lim.energiaMin).toLocaleString('it-IT')} J`);
+      return pb.length?`<div class="lim lim-no"><i class="ti ti-alert-triangle"></i><div><b>Tiro sconsigliato per ${esc(lim.nome)}</b><br>${pb.join('; ')}.${lim.nota?`<br><span>${esc(lim.nota)}</span>`:''}</div></div>`
+                      :`<div class="lim lim-ok"><i class="ti ti-circle-check"></i><div><b>Dentro i limiti per ${esc(lim.nome)}</b><br>${[lim.distMax?`distanza massima ${lim.distMax} m`:'',lim.energiaMin?`energia minima ${Number(lim.energiaMin).toLocaleString('it-IT')} J`:''].filter(Boolean).join(' · ')}${lim.nota?`<br><span>${esc(lim.nota)}</span>`:''}</div></div>`; })():''}
+  <h3 class="sec">Tabella di tiro <span style="text-transform:none;letter-spacing:0;font-weight:500">${T.angolo?`con angolo ${T.angolo}°`:'in piano'}${T.ventoKmh?`, vento ${String(T.ventoKmh).replace('.',',')} km/h`:''}</span></h3>
+  <div class="card" style="padding:4px 10px;overflow-x:auto"><table class="mini ttab"><thead><tr><th>Distanza</th><th>Caduta</th><th>Clic</th><th>Vento</th><th>Energia</th></tr></thead><tbody>
+    ${tab.map(p=>`<tr class="${p===vicino?'on':''}"><td>${p.s} m</td><td>${p.cadutaCm>=0?'+':''}${p.cadutaCm.toFixed(1).replace('.',',')} cm</td><td>${Math.abs(p.cadutaCm)<0.5?'0':(p.cadutaCm<0?'▲ ':'▼ ')+clic(p)}</td><td>${T.ventoKmh?cm(p.derivaCm)+' cm':'–'}</td><td>${Math.round(p.energia)} J</td></tr>`).join('')}
+  </tbody></table></div>
+  <p class="fine">Calcolo balistico a punto materiale (modello ${A.mod}) con aria, quota e temperatura. È preciso quanto i dati inseriti: prima della stagione verifica sempre al poligono la tua arma alle varie distanze. Rispetta le distanze e le energie minime previste dal tuo calendario e dalle prescrizioni per la caccia di selezione.</p>`;
+}
+function scegliArma(id){
+  if(id==='__nuova'){ renderTiro(true); return; }
+  try{ const t=leggiTiro(); t.armaId=id; localStorage.setItem(LS_TIRO,JSON.stringify(t)); }catch(_){} renderTiro();
+}
+function salvaArma(){
+  const A=datiArma();
+  openSheet(`<h3>${_arma&&_arma.id?'Aggiorna profilo':'Salva profilo arma'}</h3><p class="sub">Resta solo su questo telefono.</p><div id="ta-msg"></div>
+    <div class="field"><label for="ta-nome">Nome del profilo</label><input class="input" id="ta-nome" maxlength="40" value="${esc(_arma&&_arma.nome||'')}" placeholder="Es. Blaser .308 per il capriolo"></div>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" onclick="confermaArma()"><i class="ti ti-check"></i> Salva</button></div>`);
+  window._armaTmp=A;
+}
+function confermaArma(){
+  const nome=$('ta-nome').value.trim(); if(!nome){ msg('ta-msg','err','Dai un nome al profilo.'); return; }
+  const l=leggiArmi(), id=_arma&&_arma.id||('a'+Date.now().toString(36));
+  const rec={...window._armaTmp,id,nome}; const i=l.findIndex(x=>x.id===id); if(i>=0) l[i]=rec; else l.push(rec);
+  salvaArmi(l); try{ const t=leggiTiro(); t.armaId=id; localStorage.setItem(LS_TIRO,JSON.stringify(t)); }catch(_){}
+  closeSheet(); renderTiro(); toast('Profilo salvato');
+}
+function eliminaArma(){
+  if(!_arma||!_arma.id) return;
+  openSheet(`<h3>Eliminare il profilo?</h3><p class="sub">${esc(_arma.nome)}</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="salvaArmi(leggiArmi().filter(x=>x.id!=='${_arma.id}'));closeSheet();renderTiro()"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+
+
+/* ───────── Copia di sicurezza ───────── */
+async function exportBackup(){
+  const l=leggiScad(), alpi=leggiAlpi(); if(!l.length&&!alpi){ toast('Non ci sono dati da salvare'); return; }
+  const allegati={};
+  for(const s of l.filter(x=>x.allegato)){ try{ const a=await allegatoGet(s.id); if(a&&a.blob) allegati[s.id]={nome:a.nome,tipo:a.tipo,dati:await blobADataUrl(a.blob)}; }catch(_){} }
+  const txt=JSON.stringify({app:'sfv-cacciatore',versione:3,salvatoIl:new Date().toISOString(),scadenze:l,comprensorio:alpi,allegati},null,2);
+  const file=new File([txt],'scadenze-sfv-cacciatore.json',{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Copia scadenze SFV'}).catch(()=>{}); return; }
+  const url=URL.createObjectURL(file); const a=document.createElement('a'); a.href=url; a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000); toast('Copia salvata nei download');
+}
+function importBackup(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const j=JSON.parse(r.result); const nuove=(j.scadenze||[]).filter(x=>x&&x.nome&&/^\d{4}-\d{2}-\d{2}$/.test(x.scadenza));
+      const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)?v:'';
+      const ca=j.comprensorio&&j.comprensorio.nome?{nome:String(j.comprensorio.nome).slice(0,80),distretto:String(j.comprensorio.distretto||'').slice(0,80),note:String(j.comprensorio.note||'').slice(0,1000),
+        righe:(j.comprensorio.righe||[]).filter(x=>x&&x.specie).slice(0,100).map((x,i)=>({id:'r'+i+Date.now().toString(36),specie:String(x.specie).slice(0,80),dal:iso(x.dal),al:iso(x.al),note:String(x.note||'').slice(0,140)}))}:null;
+      if(!nuove.length&&!ca) throw 0;
+      if(ca){ salvaAlpi(ca); renderAlpi(); }
+      const l=leggiScad(), allj=j.allegati||{};
+      for(const n of nuove){ const rec={id:String(n.id||'').replace(/[^\w-]/g,'').slice(0,40)||('s'+Math.random().toString(36).slice(2)),nome:String(n.nome).slice(0,80),scadenza:n.scadenza,note:String(n.note||'').slice(0,120)};
+        const a=allj[n.id]; if(a&&typeof a.dati==='string'&&/^data:(application\/pdf|image\/[\w+.-]+);base64,/.test(a.dati)){ try{ const tipo=a.tipo==='pdf'?'pdf':'foto'; await allegatoPut(rec.id,{blob:await dataUrlABlob(a.dati),nome:String(a.nome||'Copia').slice(0,90),tipo}); rec.allegato={nome:String(a.nome||'Copia').slice(0,90),tipo}; }catch(_){} }
+        const i=l.findIndex(x=>x.id===rec.id); if(i>=0) l[i]=rec; else l.push(rec); }
+      salvaScad(l); renderScadenze(); toast(`Ripristinate ${nuove.length} scadenze${ca?' e il comprensorio':''}`);
+    }catch(_){ toast('File non valido: usa una copia salvata da questa app'); }
+  };
+  r.readAsText(f);
+}
+
+/* ───────── Notifiche delle scadenze ─────────
+   Le scadenze vengono copiate in un archivio del telefono che il service worker
+   può leggere. Con l'app installata su Android il telefono lo risveglia circa
+   una volta al giorno (Periodic Background Sync); ovunque, il controllo avviene
+   anche a ogni apertura dell'app. Nulla passa da internet. */
+const LS_NOTIF='sfv_notifiche_on';
+// il service worker non c'è se l'app è aperta come file dal computer: non aspettarlo per sempre
+function swPronto(){ if(!('serviceWorker' in navigator)||!location.protocol.startsWith('http')) return Promise.resolve(null);
+  return Promise.race([navigator.serviceWorker.ready,new Promise(ok=>setTimeout(()=>ok(null),3000))]); }
+function notifIdb(){ return new Promise((ok,ko)=>{ try{ const q=indexedDB.open('sfv_notifiche',1); q.onupgradeneeded=()=>q.result.createObjectStore('kv'); q.onsuccess=()=>ok(q.result); q.onerror=()=>ko(q.error); }catch(e){ ko(e); } }); }
+async function notifScrivi(k,v){ try{ const d=await notifIdb(); await new Promise(ok=>{ const t=d.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=ok; t.onerror=ok; }); }catch(_){} }
+function notifAttive(){ try{ return localStorage.getItem(LS_NOTIF)==='1' && 'Notification' in window && Notification.permission==='granted'; }catch(_){ return false; } }
+function notifSupporto(){
+  if(!('Notification' in window)) return isApple()&&!isStandalone()?'iphone-installa':'no';
+  return 'si';
+}
+async function notifSincronizza(){
+  await notifScrivi('scadenze',leggiScad().map(s=>({id:s.id,nome:s.nome,scadenza:s.scadenza})));
+  await notifScrivi('config',{attive:notifAttive()});
+}
+async function notifControlla(){
+  if(!notifAttive()) return;
+  await notifSincronizza();
+  try{ const reg=await swPronto(); if(reg&&reg.active) reg.active.postMessage('controlla-scadenze'); else notifDiretta(); }catch(_){}
+}
+function notifDiretta(){
+  try{ const inv=JSON.parse(localStorage.getItem('sfv_notif_inviate')||'{}');
+    for(const s of leggiScad()){ const g=giorniA(s.scadenza), sg=[30,7,1,0].find(x=>g<=x&&g>=(x===0?-3:x-2)); if(sg===undefined) continue;
+      const k=s.id+'|'+s.scadenza+'|'+sg; if(inv[k]) continue;
+      new Notification(s.nome,{body:g<0?`È scaduto da ${-g} giorni.`:g===0?'Scade oggi.':`Scade tra ${g} giorni.`,icon:'icon-192.png'}); inv[k]=Date.now(); }
+    localStorage.setItem('sfv_notif_inviate',JSON.stringify(inv)); }catch(_){}
+}
+async function toggleNotifiche(){
+  if(notifAttive()){ try{ localStorage.setItem(LS_NOTIF,'0'); }catch(_){} await notifSincronizza(); renderProfilo(); toast('Notifiche disattivate'); return; }
+  const sup=notifSupporto();
+  if(sup!=='si'){
+    openSheet(`<h3>Notifiche delle scadenze</h3><p class="sub">${sup==='iphone-installa'?'Su iPhone le notifiche funzionano solo con l\'app installata: in Safari tocca Condividi e poi “Aggiungi alla schermata Home”, poi apri l\'app dall\'icona e riprova.':'Questo browser non permette le notifiche.'} Nel frattempo usa “Calendario” su ogni scadenza: il telefono ti avviserà 30 e 7 giorni prima.</p><div class="foot"><button class="btn btn-primary" onclick="closeSheet()">Ho capito</button></div>`);
+    return;
+  }
+  let perm=Notification.permission;
+  if(perm==='default'){ try{ perm=await Notification.requestPermission(); }catch(_){} }
+  if(perm!=='granted'){ toast('Notifiche non permesse: puoi attivarle dalle impostazioni del telefono'); renderProfilo(); return; }
+  try{ localStorage.setItem(LS_NOTIF,'1'); }catch(_){}
+  let periodiche=false;
+  try{ const reg=await swPronto();
+    if(reg&&'periodicSync' in reg){ const st=await navigator.permissions.query({name:'periodic-background-sync'}).catch(()=>({state:'denied'}));
+      if(st.state==='granted'){ await reg.periodicSync.register('sfv-scadenze',{minInterval:12*60*60*1000}); periodiche=true; } } }catch(_){}
+  await notifControlla(); renderProfilo();
+  openSheet(`<h3>Notifiche attive</h3><p class="sub">${periodiche?'Il telefono controllerà le tue scadenze circa una volta al giorno e ti avviserà 30 giorni, 7 giorni, il giorno prima e il giorno della scadenza, anche con l\'app chiusa.':'Riceverai l\'avviso quando apri l\'app (30 giorni, 7 giorni, il giorno prima e il giorno della scadenza). Per gli avvisi con l\'app chiusa installa l\'app sul telefono, oppure usa anche “Calendario” su ogni scadenza.'}</p><div class="foot"><button class="btn btn-primary" onclick="closeSheet()">Bene</button></div>`);
+}
+
+/* ───────── Benvenuto al primo avvio ───────── */
+function benvenuto(forza){
+  const k='sfv_benvenuto_'+APP; try{ if(!forza&&localStorage.getItem(k)) return; localStorage.setItem(k,'1'); }catch(_){}
+  const P=APP==='montagna'?[
+    {f:'camoscio', t:'Benvenuto in SFV Montagna', p:'L\'app gratuita della Scuola Faunistica Venatoria per chi caccia in Zona Alpi.'},
+    {f:'pernice-bianca', t:'Il tuo comprensorio', p:'Inserisci il calendario interno del tuo comprensorio alpino: vedi a colpo d\'occhio cosa è aperto oggi.'},
+    {f:'stambecco', t:'Biometria e tiro', p:'Consulta le schede biometriche di ungulati e tetraonidi e calcola la distanza reale di tiro con il tuo calibro.'},
+    {f:'capriolo', t:'Mai più documenti scaduti', p:'Porto d\'armi, assicurazione, tasse: inserisci le date e allega una foto. Restano solo sul tuo telefono.'},
+  ]:[
+    {f:'fagiano', t:'Benvenuto in SFV Pianura', p:'L\'app gratuita della Scuola Faunistica Venatoria per la caccia in pianura e collina.'},
+    {f:'germano', t:'Il calendario della tua regione', p:'Scegli la tua regione e apri il calendario venatorio ufficiale sempre aggiornato.'},
+    {f:'lepre', t:'Mai più documenti scaduti', p:'Porto d\'armi, assicurazione, tasse: inserisci le date e allega una foto. Restano solo sul tuo telefono.'},
+  ];
+  let i=0;
+  const el=document.createElement('div'); el.className='onb'; document.body.appendChild(el);
+  const mostra=()=>{ const x=P[i], f=faunaDi(x.f), ultimo=i===P.length-1;
+    el.innerHTML=`<img class="ph" src="${fotoUrl(f,1200)}" alt="" onerror="this.remove()"><div class="onb-c"><img class="onb-s" src="simbolo.svg" alt=""><h2>${esc(x.t)}</h2><p>${esc(x.p)}</p>
+      <div class="onb-dots">${P.map((_,k)=>`<span class="${k===i?'on':''}"></span>`).join('')}</div>
+      <div class="onb-b"><button class="btn" style="color:#fff" onclick="this.closest('.onb').remove()">${ultimo?'':'Salta'}</button><button class="btn btn-gold" id="onb-next">${ultimo?'Inizia':'Avanti'} <i class="ti ti-arrow-right"></i></button></div></div>`;
+    $('onb-next').onclick=()=>{ if(ultimo) el.remove(); else { i++; mostra(); } };
+  };
+  mostra();
+}
+
+/* ───────── Profilo ───────── */
+function renderProfilo(){
+  const n=isAdmin?'Amministratore':`${(profilo&&profilo.nome)||''} ${(profilo&&profilo.cognome)||''}`.trim()||'Cacciatore';
+  $('p-name').textContent=n; $('p-email').textContent=me.email;
+  $('p-avatar').textContent=(n[0]||'?').toUpperCase();
+  $('top-sub').textContent=n;
+  $('p-verify').innerHTML=me.emailVerified?'':`<button class="link" style="font-size:12px" onclick="reinviaVerifica()">Email da confermare · invia di nuovo</button>`;
+  $('p-news').textContent=profilo&&profilo.newsletter?'Attive':'Disattivate';
+  $('p-notif').textContent=notifAttive()?'Attive':'Disattivate';
+}
+async function reinviaVerifica(){ try{ await me.sendEmailVerification(); toast('Email di conferma inviata'); }catch(e){ toast(erroreIT(e)); } }
+async function toggleNews(){
+  if(!profilo) return;
+  if(profilo.newsletter){
+    openSheet(`<h3>Revocare il consenso?</h3><p class="sub">Non riceverai più le comunicazioni della Scuola. L'app è gratuita in cambio di queste comunicazioni: alla prossima apertura ti chiederà se vuoi riattivarle per continuare a usarla.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="closeSheet();revocaNews()">Revoca</button></div>`);
+    return;
+  }
+  return revocaNews();
+}
+async function revocaNews(){
+  const v=!profilo.newsletter;
+  try{ await db.collection('cacciatori').doc(me.uid).set({newsletter:v},{merge:true}); profilo.newsletter=v; renderProfilo(); toast(v?'Riceverai le comunicazioni della Scuola':'Consenso revocato: non riceverai più comunicazioni'); }
+  catch(e){ toast(erroreIT(e)); }
+}
+function askDelete(){
+  openSheet(`<h3>Eliminare l'account?</h3><p class="sub">Cancelliamo nome, cognome ed email dai nostri archivi. Anche le scadenze salvate su questo telefono verranno eliminate. L'operazione non si può annullare.</p>
+    <div id="del-msg"></div><div class="field"><label for="del-pwd">Conferma con la tua password</label><input class="input" id="del-pwd" type="password" autocomplete="current-password"></div>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" id="b-del" onclick="doDelete()"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+async function doDelete(){
+  $('b-del').disabled=true;
+  try{
+    await me.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(me.email,$('del-pwd').value));
+    try{ await db.collection('cacciatori').doc(me.uid).delete(); }catch(_){}
+    localStorage.removeItem(LS_SCAD); localStorage.removeItem(LS_DOCS); localStorage.removeItem(LS_ALPI); localStorage.removeItem(LS_CAL); localStorage.removeItem(LS_REG); try{ indexedDB.deleteDatabase('sfv_allegati'); indexedDB.deleteDatabase('sfv_notifiche'); }catch(_){}
+    await me.delete(); closeSheet(); toast('Account eliminato');
+  }catch(e){ msg('del-msg','err',erroreIT(e)); $('b-del').disabled=false; }
+}
+
+/* ───────── Installazione ───────── */
+let _installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); _installEvt=e; if(me) renderInstall(); });
+function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; }
+function renderInstall(){
+  let h='';
+  try{ if(localStorage.getItem('sfv_install_chiuso')) { $('install-box').innerHTML=''; return; } }catch(_){}
+  if(!isStandalone()){
+    if(_installEvt) h=`<div class="install"><i class="ti ti-device-mobile-down"></i><div class="sp"><b>Installa l'app</b><br>Aprila dalla schermata Home come un'app.</div><button class="btn btn-gold btn-sm" onclick="installa()">Installa</button><button class="btn btn-sm" onclick="chiudiInstall()" aria-label="Chiudi"><i class="ti ti-x"></i></button></div>`;
+    else if(isApple()) h=`<div class="install"><i class="ti ti-share"></i><div class="sp"><b>Installa su iPhone</b><br>Tocca <i class="ti ti-share" style="font-size:14px"></i> Condividi in Safari, poi “Aggiungi alla schermata Home”.</div><button class="btn btn-sm" onclick="chiudiInstall()" aria-label="Chiudi"><i class="ti ti-x"></i></button></div>`;
+  }
+  $('install-box').innerHTML=h;
+}
+async function installa(){ if(!_installEvt) return; _installEvt.prompt(); await _installEvt.userChoice.catch(()=>{}); _installEvt=null; renderInstall(); }
+function chiudiInstall(){ try{ localStorage.setItem('sfv_install_chiuso','1'); }catch(_){} renderInstall(); }
+
+/* ───────── Privacy ───────── */
+function openPrivacy(){
+  openSheet(`<h3>Informativa privacy</h3><div class="legal">
+    <p>L'app <b>${esc(VAR.nome)}</b> è offerta gratuitamente dalla Scuola Faunistica Venatoria (titolare del trattamento).</p>
+    <h4>Quali dati raccogliamo</h4><p>Solo <b>nome, cognome ed email</b> che inserisci alla registrazione, più la data di iscrizione e la data del consenso alle comunicazioni.</p>
+    <h4>Perché</h4><ul><li>Gestire il tuo account e farti usare l'app (base giuridica: esecuzione del servizio richiesto).</li><li>Inviarti via email le comunicazioni della Scuola Faunistica Venatoria su iniziative, corsi, eventi e attività per il mondo venatorio, comprese quelle del suo partner Cal Resana Outdoor (base giuridica: consenso). Le email partono sempre dalla Scuola: il tuo indirizzo non viene ceduto a Cal Resana Outdoor né ad altri. L'app è offerta gratuitamente in cambio di questo consenso, che è quindi richiesto per usarla. Puoi revocarlo in qualsiasi momento dal profilo o dal link presente in ogni email; dopo la revoca non riceverai più comunicazioni.</li></ul>
+    <h4>Le scadenze dei tuoi documenti</h4><p>Le date che inserisci in “Le mie scadenze” il comprensorio alpino con il suo calendario e le copie dei documenti che alleghi (PDF o foto) restano <b>solo sul tuo telefono</b>. Non vengono inviate alla Scuola né a terzi. Se le aggiungi al calendario, finiscono nel calendario che scegli tu.</p>
+    <h4>Dove sono conservati i dati</h4><p>Su Google Firebase (Google Ireland Ltd.), fornitore che tratta i dati per conto della Scuola. Li conserviamo finché mantieni l'account.</p>
+    <h4>I tuoi diritti</h4><p>Puoi vedere, correggere o cancellare i tuoi dati in ogni momento: dal profilo con “Elimina il mio account”, oppure scrivendo a <a href="mailto:scuolafaunisticavenatoria@gmail.com">scuolafaunisticavenatoria@gmail.com</a>. Puoi anche presentare reclamo al Garante per la protezione dei dati personali.</p>
+  </div><div class="foot"><button class="btn btn-primary" onclick="closeSheet();if(window._cpRiapri){window._cpRiapri=false;completaProfilo();}">Ho capito</button></div>`);
+}
+
+/* ───────── Gestione (amministratore) ───────── */
+let UTENTI=[];
+async function caricaAdmin(){
+  if(!isAdmin) return;
+  renderAdminDocs(); renderAdminCal(); renderAdminLimiti();
+  try{
+    const s=await db.collection('cacciatori').get();
+    UTENTI=s.docs.map(d=>({id:d.id,...d.data()})).map(u=>({...u,ms:tsMs(u.creatoIl)})).sort((a,b)=>b.ms-a.ms);
+    $('st-users').textContent=UTENTI.length; $('st-app').textContent=UTENTI.filter(u=>(u.apps||[]).includes(APP)).length; $('st-news').textContent=UTENTI.filter(u=>u.newsletter).length;
+    $('adm-users').innerHTML=UTENTI.length?`<table class="mini"><thead><tr><th>Nome</th><th>Email</th><th>Iscritto</th></tr></thead><tbody>${UTENTI.slice(0,100).map(u=>`<tr><td>${esc(u.nome)} ${esc(u.cognome)}</td><td style="word-break:break-all">${esc(u.email)}${u.newsletter?' <i class="ti ti-mail" title="Consenso notizie" style="color:var(--green-600)"></i>':''}</td><td>${u.ms?new Date(u.ms).toLocaleDateString('it-IT'):''}</td></tr>`).join('')}</tbody></table>${UTENTI.length>100?`<p style="font-size:12px;color:var(--text-3);margin-top:8px">Mostrati i 100 più recenti. Scarica l'elenco per vederli tutti.</p>`:''}`:'<div class="empty" style="padding:16px"><b>Nessun cacciatore iscritto per ora</b></div>';
+  }catch(e){ $('adm-users').innerHTML=`<div class="msg err"><i class="ti ti-alert-circle"></i><span>Elenco non leggibile: ${esc(erroreIT(e))}</span></div>`; }
+}
+function renderAdminDocs(){
+  $('st-docs').textContent=DOCS.length;
+  $('adm-docs').innerHTML=DOCS.length?DOCS.map(d=>`<div class="doc" style="cursor:default"><div class="ic"><i class="ti ${catDi(d.categoria).icon}"></i></div><div class="bd"><div class="tt">${esc(d.titolo)}</div><div class="mt">${esc(catDi(d.categoria).nome)}${d.pubblicato===false?' · <b style="color:var(--red-700)">nascosto</b>':''}</div><div class="acts" style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-ghost btn-sm" onclick="apriDoc('${d.id}')"><i class="ti ti-eye"></i></button><button class="btn btn-ghost btn-sm" onclick="editDoc('${d.id}')"><i class="ti ti-pencil"></i> Modifica</button><button class="btn btn-danger btn-sm" onclick="delDoc('${d.id}')"><i class="ti ti-trash"></i></button></div></div></div>`).join(''):'<div class="empty" style="padding:16px"><b>Nessun documento pubblicato</b></div>';
+}
+function editDoc(id){
+  const d=id?DOCS.find(x=>x.id===id):null;
+  const tipo=d?d.tipo||'file':'file';
+  openSheet(`<h3>${d?'Modifica documento':'Pubblica un documento'}</h3><p class="sub">Sarà visibile subito a tutti i cacciatori iscritti.</p><div id="d-msg"></div>
+    <div class="field"><label for="d-titolo">Titolo</label><input class="input" id="d-titolo" maxlength="140" value="${d?esc(d.titolo):''}" placeholder="Es. Scheda abbattimento capriolo 2026/27"></div>
+    <div class="field"><label for="d-cat">Categoria</label><select class="input" id="d-cat">${CATEGORIE.map(c=>`<option value="${c.id}" ${d&&d.categoria===c.id?'selected':''}>${esc(c.nome)}</option>`).join('')}</select></div>
+    <div class="field"><label for="d-desc">Descrizione breve (facoltativa)</label><textarea class="input" id="d-desc" maxlength="400">${d?esc(d.descrizione||''):''}</textarea></div>
+    <div class="row2"><div class="field"><label for="d-ente">Ente / fonte</label><input class="input" id="d-ente" maxlength="80" value="${d?esc(d.ente||''):''}" placeholder="Es. Regione Veneto"></div><div class="field"><label for="d-data">Data del documento</label><input class="input" id="d-data" type="date" value="${d?esc(d.dataDoc||''):''}"></div></div>
+    <div class="field"><label>Contenuto</label><div class="tabs-auth" style="margin-bottom:10px"><button type="button" id="dt-file" class="${tipo==='file'?'on':''}" onclick="docTipo('file')">Carica file</button><button type="button" id="dt-link" class="${tipo==='link'?'on':''}" onclick="docTipo('link')">Collegamento</button></div>
+      <div id="dw-file" class="${tipo==='file'?'':'hidden'}"><input class="input" id="d-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.odt,.jpg,.jpeg,.png">${d&&d.tipo==='file'&&d.nomeFile?`<p style="font-size:12px;color:var(--text-3);margin-top:4px">File attuale: ${esc(d.nomeFile)}. Scegline uno solo se vuoi sostituirlo.</p>`:''}<div class="progress hidden" id="d-prog"><div></div></div></div>
+      <div id="dw-link" class="${tipo==='link'?'':'hidden'}"><input class="input" id="d-url" type="url" placeholder="https://…" value="${d&&d.tipo==='link'?esc(d.url||''):''}"><p style="font-size:12px;color:var(--text-3);margin-top:4px">Per delibere e regolamenti pubblicati sui siti ufficiali (Regione, Provincia, ATC).</p></div></div>
+    <label class="check"><input type="checkbox" id="d-pub" ${!d||d.pubblicato!==false?'checked':''}><span>Visibile ai cacciatori</span></label>
+    <div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-primary" id="b-doc" onclick="salvaDoc('${d?d.id:''}')"><i class="ti ti-check"></i> ${d?'Salva':'Pubblica'}</button></div>`);
+}
+function docTipo(t){ $('dt-file').classList.toggle('on',t==='file'); $('dt-link').classList.toggle('on',t==='link'); $('dw-file').classList.toggle('hidden',t!=='file'); $('dw-link').classList.toggle('hidden',t!=='link'); }
+async function salvaDoc(id){
+  const titolo=$('d-titolo').value.trim(); const tipo=$('dt-link').classList.contains('on')?'link':'file';
+  if(!titolo){ msg('d-msg','err','Scrivi il titolo.'); return; }
+  const old=id?DOCS.find(x=>x.id===id):null;
+  const file=$('d-file').files&&$('d-file').files[0];
+  let url=$('d-url').value.trim();
+  if(tipo==='link'&&!/^https?:\/\//i.test(url)){ msg('d-msg','err','Incolla un collegamento che inizia con https://'); return; }
+  if(tipo==='file'&&!file&&!(old&&old.tipo==='file'&&old.url)){ msg('d-msg','err','Scegli il file da caricare.'); return; }
+  if(file&&file.size>25*1024*1024){ msg('d-msg','err','Il file supera 25 MB.'); return; }
+  const b=$('b-doc'); b.disabled=true; msg('d-msg');
+  const ref=id?db.collection('app_documenti').doc(id):db.collection('app_documenti').doc();
+  const rec={titolo,categoria:$('d-cat').value,descrizione:$('d-desc').value.trim(),ente:$('d-ente').value.trim(),dataDoc:$('d-data').value||'',
+    pubblicato:$('d-pub').checked,tipo,aggiornatoIl:firebase.firestore.FieldValue.serverTimestamp()};
+  try{
+    if(tipo==='file'&&file){
+      if(!storage) throw {code:'storage/unauthorized'};
+      const nomeSicuro=file.name.replace(/[^\w.\-]+/g,'_').slice(-90);
+      const path=`app_documenti/${ref.id}/${Date.now()}_${nomeSicuro}`;
+      $('d-prog').classList.remove('hidden');
+      const task=storage.ref(path).put(file,{contentType:file.type||'application/octet-stream'});
+      task.on('state_changed',s=>{ $('d-prog').firstElementChild.style.width=Math.round(s.bytesTransferred/s.totalBytes*100)+'%'; });
+      await task;
+      rec.url=await storage.ref(path).getDownloadURL(); rec.storagePath=path; rec.nomeFile=file.name;
+      if(old&&old.storagePath&&old.storagePath!==path){ storage.ref(old.storagePath).delete().catch(()=>{}); }
+    }else if(tipo==='link'){
+      rec.url=url; rec.storagePath=firebase.firestore.FieldValue.delete(); rec.nomeFile=firebase.firestore.FieldValue.delete();
+      if(old&&old.storagePath){ storage&&storage.ref(old.storagePath).delete().catch(()=>{}); }
+    }
+    if(!id) rec.creatoIl=firebase.firestore.FieldValue.serverTimestamp();
+    await ref.set(rec,{merge:true});
+    closeSheet(); toast(id?'Documento aggiornato':'Documento pubblicato');
+  }catch(e){ msg('d-msg','err',erroreIT(e)); b.disabled=false; }
+}
+function delDoc(id){
+  const d=DOCS.find(x=>x.id===id); if(!d) return;
+  openSheet(`<h3>Eliminare il documento?</h3><p class="sub">“${esc(d.titolo)}” sparirà dall'app di tutti i cacciatori.</p><div class="foot"><button class="btn btn-ghost" onclick="closeSheet()">Annulla</button><button class="btn btn-danger" onclick="confermaDelDoc('${id}')"><i class="ti ti-trash"></i> Elimina</button></div>`);
+}
+async function confermaDelDoc(id){
+  const d=DOCS.find(x=>x.id===id);
+  try{ await db.collection('app_documenti').doc(id).delete(); if(d&&d.storagePath&&storage) storage.ref(d.storagePath).delete().catch(()=>{}); closeSheet(); toast('Documento eliminato'); }
+  catch(e){ toast(erroreIT(e)); }
+}
+function exportUsers(){
+  if(!UTENTI.length){ toast('Nessun iscritto da esportare'); return; }
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Nome','Cognome','Email','App','Consenso notizie','Iscritto il'],...UTENTI.map(u=>[u.nome,u.cognome,u.email,(u.apps||[]).join(' + '),u.newsletter?'SI':'NO',u.ms?new Date(u.ms).toLocaleDateString('it-IT'):''])];
+  const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a'); a.href=url; a.download='cacciatori-iscritti-app.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+/* Ricalcola i colori delle scadenze se l'app resta aperta oltre la mezzanotte */
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&me) renderScadenze(); });
+</script>
+</body>
+</html>
