@@ -4590,13 +4590,34 @@ function openContent(lessonKey,label,idx){
 }
 
 let _currentFile=null;
+// Converte un link di Google Drive/Documenti/Presentazioni/Fogli nella sua
+// versione "/preview", che si può incorporare per mostrare l'anteprima.
+function _gPreviewUrl(u){
+  u=String(u||'').trim(); let m;
+  if((m=u.match(/drive\.google\.com\/file\/d\/([^/?#]+)/i)))       return 'https://drive.google.com/file/d/'+m[1]+'/preview';
+  if((m=u.match(/docs\.google\.com\/presentation\/d\/([^/?#]+)/i))) return 'https://docs.google.com/presentation/d/'+m[1]+'/preview';
+  if((m=u.match(/docs\.google\.com\/document\/d\/([^/?#]+)/i)))      return 'https://docs.google.com/document/d/'+m[1]+'/preview';
+  if((m=u.match(/docs\.google\.com\/spreadsheets\/d\/([^/?#]+)/i)))  return 'https://docs.google.com/spreadsheets/d/'+m[1]+'/preview';
+  if((m=u.match(/drive\.google\.com\/open\?id=([^&]+)/i)))           return 'https://drive.google.com/file/d/'+m[1]+'/preview';
+  return null;
+}
 function openFile(url,title,lesson){
-  // Link di Google Drive / Documenti Google: si aprono SUBITO in una nuova scheda,
-  // senza la finestra intermedia (dentro la finestra Google chiede spesso l'accesso).
-  if(/^https?:\/\/(drive|docs)\.google\.com\//i.test(String(url||'').trim())){
-    const w=window.open(String(url).trim(),'_blank');
-    if(w){ try{ w.opener=null; }catch(_){} }
-    else showToast('Il browser ha bloccato l\'apertura: consenti i popup per questo sito','warning');
+  // Link di Google Drive / Documenti Google: anteprima incorporata DENTRO la
+  // piattaforma, così lo studente vede subito di cosa si tratta. Il pulsante
+  // "Apri" in alto porta comunque all'originale su Drive.
+  const gprev=_gPreviewUrl(url);
+  if(gprev){
+    _currentFile={url:String(url).trim(),title:title||'Documento',storagePath:''};
+    const dlB=document.getElementById('file-modal-dl'); if(dlB) dlB.style.display='none';
+    const dlB2=document.getElementById('file-modal-fallback-dl'); if(dlB2) dlB2.style.display='none';
+    document.getElementById('file-modal-title').textContent=title||'Documento';
+    document.getElementById('file-modal-extlink').href=String(url).trim();
+    document.getElementById('file-modal-fallback-link').href=String(url).trim();
+    const embed=document.getElementById('file-modal-embed');
+    const fallback=document.getElementById('file-modal-fallback');
+    fallback.style.display='none';
+    embed.src=gprev; embed.style.display='block';
+    document.getElementById('file-modal').style.display='flex';
     if(currentUser&&currentUser.role!=='admin'){
       logAccess(currentUser.tableId||currentUser.email,'file',title||'Documento');
     }
