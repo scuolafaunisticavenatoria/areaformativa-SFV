@@ -5839,11 +5839,11 @@ async function buildStudentHome(){
   }
 
   if(!courses.length){
-    container.innerHTML='<div class="txt-muted" style="text-align:center;padding:32px;font-size:13px"><i class="ti ti-book-off" style="font-size:32px;display:block;margin-bottom:10px;opacity:.4"></i>Nessun corso assegnato</div>';
+    container.innerHTML=zoomDirettaBanner()+'<div class="txt-muted" style="text-align:center;padding:32px;font-size:13px"><i class="ti ti-book-off" style="font-size:32px;display:block;margin-bottom:10px;opacity:.4"></i>Nessun corso assegnato</div>';
     return;
   }
 
-  let html='';
+  let html=zoomDirettaBanner();
   courses.forEach(cid=>{
     const c = CORSI.find(x=>x.id===cid);
     if(!c) return;
@@ -10293,6 +10293,16 @@ async function faSubmit(){
 // ⚙️ INDIRIZZO DEL DATABASE (sito Netlify). La piattaforma vi aggiunge ?dbtok=…
 //    Se un domani cambia il dominio, correggi solo questa riga.
 const DATABASE_URL = 'https://database-scuola-faunistica-venatoria.netlify.app/';
+// Videolezioni in diretta su Zoom: banner in cima alla pagina dello studente (tutti i corsi)
+const ZOOM_DIRETTA_URL = 'https://us04web.zoom.us/j/3209420614?pwd=SDRzSlliRXB3Q0RkZnNZZGMzcG1ZZz09';
+function zoomDirettaBanner(){
+  return `<a href="${ZOOM_DIRETTA_URL}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:14px 16px;background:linear-gradient(135deg,#2D8CFF,#2563EB);color:#fff;border-radius:12px;text-decoration:none;box-shadow:0 6px 18px rgba(37,99,235,.3)">
+    <span style="width:9px;height:9px;border-radius:50%;background:#ff4b4b;box-shadow:0 0 0 3px rgba(255,75,75,.3);flex:0 0 auto"></span>
+    <i class="ti ti-video" style="font-size:20px;flex:0 0 auto"></i>
+    <span style="flex:1;line-height:1.3"><span style="display:block;font-size:14px;font-weight:700">Videolezioni in diretta su Zoom</span><span style="display:block;font-size:11.5px;opacity:.9">Clicca per entrare nella lezione live</span></span>
+    <i class="ti ti-external-link" style="font-size:16px;opacity:.85;flex:0 0 auto"></i>
+  </a>`;
+}
 
 async function apriStudenteNelDatabase(){
   // Solo admin può aprire il database
