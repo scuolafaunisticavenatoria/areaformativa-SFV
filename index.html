@@ -4878,7 +4878,7 @@ function refreshHomeChips(){
     const hasSpecs = CORSI_SPEC_OBBLIGATORIA.includes(cid);
     if(hasSpecs){
       const specs = userRec?.specs?.[cid]||[];
-      const allSpecs = ['Parte Generale', ...(c.specNames||specs)];
+      const allSpecs = [...new Set(c.specNames||specs)];
       allSpecs.forEach(sp=>{
         const key = cid+'__'+sp;
         const ls = getLessons(key);
@@ -5854,7 +5854,7 @@ async function buildStudentHome(){
     if(hasSpecs){
       // Corso con specializzazioni
       const userSpecs = (pr.specs&&pr.specs[cid]) ? pr.specs[cid] : (userRec?.specs?.[cid]||[]);
-      const allSections = ['Parte Generale', ...userSpecs];
+      const allSections = [...new Set(userSpecs)];
 
       // Progresso totale del corso (tutte le sezioni)
       let totL=0, totD=0;
@@ -9514,17 +9514,12 @@ function renderStepAnagrafica(body){
     </div>`;
 }
 
-// Corsi che richiedono obbligatoriamente almeno una specializzazione
-// Per "Selezione" (c08): "Parte Generale" non può stare da solo — serve almeno un'altra spec
+// Corsi che richiedono obbligatoriamente almeno una sezione selezionata
 const CORSI_SPEC_OBBLIGATORIA=['c08','c09'];
 
 function specValida(cid){
   const specs=regData.specs[cid]||[];
-  if(cid==='c08'){
-    // Parte Generale da sola non basta: serve almeno una specie
-    const specie=specs.filter(s=>s!=='Parte Generale');
-    return specie.length>0;
-  }
+  // Basta almeno una sezione: anche solo "Parte Generale" oppure una sola specie.
   return specs.length>0;
 }
 
@@ -9536,7 +9531,7 @@ function renderStepCorsi(body, showErrors){
     const haError=showErrors&&obbligatoria&&!specValida(c.id);
     let hint='';
     if(c.id==='c08'){
-      hint='<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px"><i class="ti ti-info-circle" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i><em>«Parte Generale» non può essere selezionata da sola — scegli almeno una specie.</em></div>';
+      hint='<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px"><i class="ti ti-info-circle" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i><em>Scegli una o più sezioni: va bene anche solo la «Parte Generale» o una sola specie.</em></div>';
     } else if(obbligatoria){
       hint='<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px"><i class="ti ti-info-circle" style="font-size:11px;vertical-align:-1px;margin-right:3px"></i><em>Obbligatorio selezionare almeno una specializzazione.</em></div>';
     }
@@ -9546,13 +9541,11 @@ function renderStepCorsi(body, showErrors){
         ${obbligatoria?'<span style="color:var(--red-700);font-size:10px;font-weight:700;margin-left:4px">*obbligatorio</span>':''}
       </div>
       ${hint}
-      ${haError?`<div class="field-error" style="margin-bottom:8px;font-size:11px"><i class="ti ti-alert-circle"></i> ${c.id==='c08'?'Seleziona almeno una specie (non solo «Parte Generale»).':'Seleziona almeno una specializzazione.'}</div>`:''}
+      ${haError?`<div class="field-error" style="margin-bottom:8px;font-size:11px"><i class="ti ti-alert-circle"></i> Seleziona almeno una sezione.</div>`:''}
       <div class="reg-spec-chips-wrap">
         ${c.specs.map(s=>{
           const isSel=selSpecs.includes(s);
-          // Per c08: evidenzia "Parte Generale" come insufficiente se è l'unica selezionata
-          const isParteGeneraleSola=(c.id==='c08'&&s==='Parte Generale'&&isSel&&(selSpecs.filter(x=>x!=='Parte Generale').length===0));
-          return `<div class="reg-spec-chip-new${isSel?' sel':''}${isParteGeneraleSola?' reg-spec-chip-warn':''}" onclick="toggleRegSpecNew('${c.id}','${s}')">
+          return `<div class="reg-spec-chip-new${isSel?' sel':''}" onclick="toggleRegSpecNew('${c.id}','${s}')">
             <i class="ti ${isSel?'ti-check':'ti-plus'}" style="font-size:11px"></i>${s}
           </div>`;
         }).join('')}
