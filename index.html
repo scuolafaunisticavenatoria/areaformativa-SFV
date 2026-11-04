@@ -2768,7 +2768,7 @@ function _finishBoot(timedOut){
   refreshRenewalRequestsAdmin();
   updateAdminBadge();
   refreshDashboardAdmin();
-  loadEmailJSConfig().then(()=>checkExpiryReminders());
+  loadEmailJSConfig();
   loadCertificateConfig();
   // Backup automatico: controlla se serve eseguirlo (giornaliero o settimanale)
   setTimeout(()=>checkAndRunAutoBackup(), 3000);
@@ -2858,7 +2858,7 @@ async function _checkAdminToken(){
     refreshRenewalRequestsAdmin();
     updateAdminBadge();
     refreshDashboardAdmin();
-    loadEmailJSConfig().then(()=>checkExpiryReminders());
+    loadEmailJSConfig();
     loadCertificateConfig();
     _backfillInvites(); // crea gli inviti per gli studenti (necessari al primo accesso)
     setTimeout(()=>checkAndRunAutoBackup(), 3000);
@@ -3126,7 +3126,7 @@ async function doLogin(){
         refreshRenewalRequestsAdmin();
         updateAdminBadge();
         refreshDashboardAdmin();
-        loadEmailJSConfig().then(()=>checkExpiryReminders());
+        loadEmailJSConfig();
         loadCertificateConfig();
         _backfillInvites(); // assicura un "invito" per ogni studente già esistente
         setTimeout(()=>_backfillPublicCerts(), 5000); // schede pubbliche di verifica attestati
@@ -5640,62 +5640,6 @@ async function notifyAdminNewStudent(user){
   }catch(e){ console.warn('notifyAdmin error',e); }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   PROMEMORIA SCADENZE — invio email automatico
-   ─────────────────────────────────────────────────────────────
-   Essendo una piattaforma senza backend/cron, il controllo viene
-   eseguito quando qualcuno (admin o studente) apre l'app, al massimo
-   una volta al giorno per browser. Ogni promemoria già inviato viene
-   tracciato su Firestore (config/expiryReminders) per non essere
-   rispedito più volte per la stessa soglia.
-═══════════════════════════════════════════════════════════════ */
-const EXPIRY_REMINDER_THRESHOLDS=[30,15,7,3,1];
-
-async function sendExpiryReminderEmail(u, courseName, daysLeft, expLabel){
-  if(!_ejsReady||!_ejsConfig.templateStudent||!u.email) return;
-  try{
-    await emailjs.send(_ejsConfig.service, _ejsConfig.templateStudent, {
-      to_email:      u.email,
-      to_name:       u.nome+' '+u.cognome,
-      subject:       `Il tuo corso scade tra ${daysLeft} giorn${daysLeft===1?'o':'i'} — ${courseName}`,
-      message:       `Gentile ${u.nome}, l'accesso al corso "${courseName}" scadrà il ${expLabel} (tra ${daysLeft} giorn${daysLeft===1?'o':'i'}). Contatta la segreteria per rinnovare l'abilitazione e continuare ad accedere ai contenuti.`,
-      student_name:  u.nome+' '+u.cognome,
-      student_email: u.email,
-    });
-  }catch(e){ console.warn('sendExpiryReminderEmail error',e); }
-}
-
-async function checkExpiryReminders(){
-  try{
-    if(!_ejsReady||!_ejsConfig.templateStudent) return; // EmailJS non configurato: nulla da inviare
-    const todayKey=new Date().toISOString().slice(0,10);
-    if(localStorage.getItem('sfv_lastExpiryCheck')===todayKey) return; // già controllato oggi su questo browser
-    localStorage.setItem('sfv_lastExpiryCheck', todayKey);
-
-    const sentMap = (await _fsGet('config','expiryReminders')) || {};
-    let changed=false;
-    const today=new Date();today.setHours(0,0,0,0);
-
-    for(const sid of Object.keys(expiryDates)){
-      const u=USERS.find(x=>x.tableId===sid);
-      if(!u||!u.email) continue;
-      for(const [cid,d] of Object.entries(expiryDates[sid])){
-        const exp=new Date(d);exp.setHours(0,0,0,0);
-        const diff=Math.round((exp-today)/(1000*60*60*24));
-        if(!EXPIRY_REMINDER_THRESHOLDS.includes(diff)) continue;
-        const key=`${sid}_${cid}_${diff}`;
-        if(sentMap[key]) continue;
-        const corso=CORSI.find(c=>c.id===cid.split('__')[0]);
-        const corsoName=corso?corso.name:cid;
-        const expLabel=exp.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
-        await sendExpiryReminderEmail(u, corsoName, diff, expLabel);
-        sentMap[key]=true; changed=true;
-      }
-    }
-    if(changed) await _fsSet('config','expiryReminders', sentMap);
-  }catch(e){ console.warn('checkExpiryReminders error',e); }
-}
-
 // Notifica admin: richiesta nuovi corsi
 async function notifyAdminCourseRequest(req){
   if(!_ejsReady||!_ejsConfig.adminEmail) return;
@@ -5843,7 +5787,7 @@ async function buildStudentHome(){
     return;
   }
 
-  let html=zoomDirettaBanner();
+  let html=zoomDirettaBanner()+expiringCoursesNotice(currentUser.tableId, courses);
   courses.forEach(cid=>{
     const c = CORSI.find(x=>x.id===cid);
     if(!c) return;
@@ -6648,6 +6592,36 @@ function buildExpiryBadge(studentId){
 }
 
 // Controlla i corsi dello studente loggato e blocca quelli scaduti
+// Avviso nella pagina dello studente per i corsi che scadono entro 30 giorni (nessuna email).
+const EXPIRY_NOTICE_DAYS=30;
+function expiringCoursesNotice(sid, courses){
+  const esc=v=>String(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const today=new Date();today.setHours(0,0,0,0);
+  const items=[];
+  Object.entries(expiryDates[sid]||{}).forEach(([key,d])=>{
+    const [cid,spec]=key.split('__');
+    if(!courses.includes(cid)) return;
+    const exp=new Date(d);exp.setHours(0,0,0,0);
+    if(isNaN(exp)) return;
+    const days=Math.round((exp-today)/86400000);
+    if(days<0||days>EXPIRY_NOTICE_DAYS) return;
+    const corso=CORSI.find(c=>c.id===cid);
+    items.push({days,name:(corso?corso.name:cid)+(spec?' — '+spec:''),
+      date:exp.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})});
+  });
+  if(!items.length) return '';
+  items.sort((a,b)=>a.days-b.days);
+  const when=n=>n===0?'scade oggi':n===1?'scade domani':`scade tra ${n} giorni`;
+  return `<div class="expiring-notice" role="status" style="display:flex;gap:10px;padding:12px 14px;margin-bottom:16px;background:var(--amber-100);border:1.5px solid var(--amber-200);border-radius:var(--radius-md);color:var(--amber-700)">
+    <i class="ti ti-calendar-time" style="font-size:18px;flex-shrink:0"></i>
+    <div style="font-size:12px;line-height:1.5">
+      <div style="font-weight:700;margin-bottom:2px">Accesso in scadenza</div>
+      ${items.map(x=>`<div><b>${esc(x.name)}</b>: ${when(x.days)} (${esc(x.date)})</div>`).join('')}
+      <div style="margin-top:4px">Contatta la segreteria per rinnovare l'abilitazione.</div>
+    </div>
+  </div>`;
+}
+
 function checkStudentExpiry(){
   if(!currentUser||currentUser.role!=='student-active') return;
   const sid = currentUser.tableId||currentUser.email;
