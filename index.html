@@ -486,6 +486,12 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 .file-card-icon{font-size:26px;color:var(--blue-700)}
 .file-card-title{font-size:11px;font-weight:600;color:var(--text-primary);line-height:1.3}
 .file-card .video-card-badge{background:var(--blue-700)}
+/* Documenti con foto di copertina (al posto del riquadro celeste) */
+.file-card--photo{background:#1f2a20 center/cover no-repeat;border:none;padding:0;justify-content:flex-end;align-items:stretch;box-shadow:var(--shadow-sm)}
+.file-card--photo:hover{border-color:transparent}
+.file-card--photo .file-card-title{position:absolute;bottom:0;left:0;right:0;padding:24px 10px 9px;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.35) 65%,transparent);color:#fff;font-size:11.5px;text-align:left}
+.file-card--photo .file-card-tag{position:absolute;top:7px;left:7px;display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.92);color:#1f2a20;font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px}
+.file-card--photo .file-card-tag i{font-size:12px}
 
 /* ─── Spec badge ─────────────────────────────────────── */
 .spec-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--radius-full);font-size:10px;font-weight:600;background:var(--green-100);color:var(--green-600);border:1px solid var(--green-200);margin:2px}
@@ -4589,6 +4595,23 @@ function openContent(lessonKey,label,idx){
   }
 }
 
+
+/* Foto di copertina dei documenti: campo "cover" della lezione, altrimenti
+   scelta in base al titolo; se non c'e' corrispondenza resta il riquadro classico. */
+const _COVER_BASE='https://scuolafaunisticavenatoria.it/materiali/copertine/';
+const _COVER_RULES=[
+  [/sfogliabile/i,'manuale'],[/manuale/i,'manuale-pdf'],
+  [/quiz|test|esame/i,'quiz'],
+  [/dispensa.*legisl|legisl.*dispensa/i,'legislazione-dispensa'],[/legisl|regolament|allegato|normativ|legge/i,'legislazione'],
+  [/armi|munizion|balistic/i,'armi'],[/soccorso/i,'primo-soccorso'],
+  [/tutela|natura|agricol|ambient/i,'tutela'],[/fauna|riconosc|biolog|zoolog|uccell/i,'fauna'],
+  [/sicurezza/i,'sicurezza'],[/volpe/i,'volpe'],[/presentazione|cartografia/i,'generico']
+];
+function _fileCover(l){
+  if(l&&l.cover) return /^https?:/.test(l.cover)?l.cover:_COVER_BASE+l.cover+'.jpg';
+  const t=(l&&l.title)||''; for(const [re,img] of _COVER_RULES){ if(re.test(t)) return _COVER_BASE+img+'.jpg'; }
+  return '';
+}
 let _currentFile=null;
 // Converte un link di Google Drive/Documenti/Presentazioni/Fogli nella sua
 // versione "/preview", che si può incorporare per mostrare l'anteprima.
@@ -5725,6 +5748,14 @@ function lessonCardsHtml(lessons, doneSet, lessonKey, label){
     const done = doneSet.has(i);
     const isFile = l.type==='file';
     if(isFile){
+      const cov=_fileCover(l);
+      if(cov){
+        return `<div class="file-card file-card--photo" style="background-image:url('${cov}')" onclick="openContentAndMark('${lessonKey}','${label}',${i})" title="${(l.title||'Documento '+(i+1)).replace(/"/g,'&quot;')}">
+        <span class="file-card-tag"><i class="ti ti-${/sfogliabile|manuale/i.test(l.title||'')?'book':'file-text'}"></i>${/sfogliabile/i.test(l.title||'')?'Libro':'Documento'}</span>
+        <span class="file-card-title">${l.title||'Documento '+(i+1)}</span>
+        <span id="prog-pill-${lessonKey}-${i}" class="video-card-badge">${done?'<i class="ti ti-circle-check"></i>':''}</span>
+      </div>`;
+      }
       return `<div class="file-card" onclick="openContentAndMark('${lessonKey}','${label}',${i})" title="${(l.title||'Documento '+(i+1)).replace(/"/g,'&quot;')}">
         <i class="ti ti-file-text file-card-icon"></i>
         <span class="file-card-title">${l.title||'Documento '+(i+1)}</span>
