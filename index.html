@@ -4602,15 +4602,20 @@ const _COVER_BASE='https://scuolafaunisticavenatoria.it/materiali/copertine/';
 const _COVER_RULES=[
   [/sfogliabile/i,'manuale'],[/manuale/i,'manuale-pdf'],
   [/quiz|test|esame/i,'quiz'],
-  [/dispensa.*legisl|legisl.*dispensa/i,'legislazione-dispensa'],[/legisl|regolament|allegato|normativ|legge/i,'legislazione'],
+  [/capriol/i,'capriolo'],[/cervo/i,'cervo'],[/camosci/i,'camoscio'],[/daino/i,'bosco'],[/muflon/i,'montagna'],[/cinghial/i,'cacciatore'],
+  [/galliform|tetraon/i,'neve'],[/censiment|biometr|rilevament|dentizion/i,'altana'],
+  [/dispensa.*legisl|legisl.*dispensa/i,'legislazione-dispensa'],[/legisl|regolament|allegato|normativ|legge|tabella/i,'legislazione'],
   [/armi|munizion|balistic/i,'armi'],[/soccorso/i,'primo-soccorso'],
-  [/tutela|natura|agricol|ambient/i,'tutela'],[/fauna|riconosc|biolog|zoolog|uccell/i,'fauna'],
-  [/sicurezza/i,'sicurezza'],[/volpe/i,'volpe'],[/presentazione|cartografia/i,'generico']
+  [/tutela|natura|agricol|ambient|igienic|carni/i,'tutela'],[/fauna|riconosc|biolog|zoolog|uccell/i,'fauna'],
+  [/sicurezza|controllo/i,'sicurezza'],[/volpe/i,'volpe']
 ];
+// nessuna corrispondenza: una foto di natura scelta in modo fisso in base al titolo
+const _COVER_FALLBACK=['generico','bosco','tramonto','montagna','neve','altana','picchio','cacciatore'];
 function _fileCover(l){
   if(l&&l.cover) return /^https?:/.test(l.cover)?l.cover:_COVER_BASE+l.cover+'.jpg';
   const t=(l&&l.title)||''; for(const [re,img] of _COVER_RULES){ if(re.test(t)) return _COVER_BASE+img+'.jpg'; }
-  return '';
+  let h=0; for(const ch of t) h=(h*31+ch.charCodeAt(0))>>>0;
+  return _COVER_BASE+_COVER_FALLBACK[h%_COVER_FALLBACK.length]+'.jpg';
 }
 let _currentFile=null;
 // Converte un link di Google Drive/Documenti/Presentazioni/Fogli nella sua
