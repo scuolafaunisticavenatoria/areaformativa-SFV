@@ -546,6 +546,11 @@ h1,h2,h3,.font-display{font-family:var(--font-display)}
 .pe-type-sel.type-video{border-color:#1AB7EA55;color:#0b6a8a;background:#1AB7EA1A}
 .pe-del{background:transparent;border:none;cursor:pointer;color:var(--text-muted);font-size:15px;padding:4px;flex-shrink:0;line-height:1;border-radius:var(--radius-sm);transition:all .15s}
 .pe-del:hover{color:var(--red-700);background:var(--red-100)}
+.pe-cover{flex-shrink:0;width:46px;height:30px;border-radius:5px;border:1px dashed var(--border-light);background:var(--surface2) center/cover no-repeat;cursor:pointer;position:relative;display:inline-flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;padding:0}
+.pe-cover:hover{border-color:var(--green-700);color:var(--green-700)}
+.pe-cover.has{border-style:solid}
+.pe-cover .pe-cover-x{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#fff;border:1px solid var(--border-light);font-size:10px;line-height:14px;color:var(--red-700);display:none}
+.pe-cover.has:hover .pe-cover-x{display:block}
 .pe-add{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--green-600);cursor:pointer;background:transparent;border:1.5px dashed var(--green-300);border-radius:var(--radius-sm);padding:6px 12px;margin-top:4px;transition:all .15s}
 .pe-add:hover{background:var(--green-100);border-color:var(--green-500)}
 /* ─── Drop zone file (trascina e rilascia) ─────────────── */
@@ -4317,6 +4322,7 @@ function renderRows(lessonKey,containerId){
       <input class="pe-input-url" placeholder="${urlPlaceholder}" value="${l.url||''}"
         style="${urlStyle}" title="${urlTitle}"
         oninput="updateLesson('${lessonKey}','${containerId}',${i},'url',this.value)" />
+      <button type="button" class="pe-cover${l.cover?' has':''}" style="${l.cover?`background-image:url('${l.cover}')`:''}" title="${l.cover?'Cambia la foto di anteprima':'Carica una foto di anteprima (facoltativa: senza foto viene scelta in automatico dal titolo)'}" onclick="pickLessonCover('${lessonKey}','${containerId}',${i})">${l.cover?`<span class="pe-cover-x" title="Togli la foto" onclick="event.stopPropagation();clearLessonCover('${lessonKey}','${containerId}',${i})">×</span>`:'<i class="ti ti-photo-plus"></i>'}</button>
       <button class="pe-del" onclick="removeLesson('${lessonKey}','${containerId}',${i})" title="Rimuovi"><i class="ti ti-trash"></i></button>`;
     row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);row.style.opacity='.4';});
     row.addEventListener('dragend',e=>{row.style.opacity='1';});
@@ -4344,6 +4350,48 @@ function renderRows(lessonKey,containerId){
   }
 }
 
+/* Foto di anteprima di una lezione: l'immagine viene ridotta (max 960 px, JPEG)
+   e salvata su Firebase Storage; il link finisce nel campo "cover" della lezione. */
+function pickLessonCover(lessonKey,containerId,idx){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0]; if(!f) return;
+    if(!/^image\//.test(f.type)){ showToast('Scegli un\'immagine (JPG, PNG…)','warning'); return; }
+    try{
+      showToast('Caricamento foto…','info');
+      const blob=await _shrinkCover(f);
+      const path='corsi/copertine/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
+      const ref=firebase.storage().ref(path);
+      await ref.put(blob,{contentType:'image/jpeg',cacheControl:'public,max-age=31536000'});
+      const url=await ref.getDownloadURL();
+      const arr=getLessons(lessonKey); if(!arr[idx]) return;
+      const old=arr[idx].coverPath;
+      arr[idx].cover=url; arr[idx].coverPath=path;
+      setLessons(lessonKey,arr); renderRows(lessonKey,containerId); saveToStorage({corsi:true});
+      if(old) firebase.storage().ref(old).delete().catch(()=>{});
+      showToast('Foto di anteprima salvata','success');
+    }catch(e){ console.warn('cover',e); showToast('Errore nel caricamento della foto','error'); }
+  };
+  inp.click();
+}
+function clearLessonCover(lessonKey,containerId,idx){
+  const arr=getLessons(lessonKey); if(!arr[idx]) return;
+  const old=arr[idx].coverPath;
+  delete arr[idx].cover; delete arr[idx].coverPath;
+  setLessons(lessonKey,arr); renderRows(lessonKey,containerId); saveToStorage({corsi:true});
+  if(old) firebase.storage().ref(old).delete().catch(()=>{});
+  showToast('Foto tolta: torna quella automatica','success');
+}
+function _shrinkCover(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const u=URL.createObjectURL(file);
+    img.onload=()=>{ const M=960; let w=img.naturalWidth,h=img.naturalHeight; const k=Math.min(1,M/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+      const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); URL.revokeObjectURL(u);
+      c.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',0.82); };
+    img.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('img')); };
+    img.src=u;
+  });
+}
 function addLesson(lessonKey,containerId){
   const arr=getLessons(lessonKey);
   arr.push({title:'',url:'',type:'video'});
@@ -5772,8 +5820,8 @@ function lessonCardsHtml(lessons, doneSet, lessonKey, label){
     const thumbPct = done ? 0 : (vp.d > 0 ? Math.round(vp.s / vp.d * 100) : 0);
     const resumeBar = (thumbPct > 2 && thumbPct < 98)
       ? `<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.35)"><div style="height:100%;width:${thumbPct}%;background:var(--gold-400);border-radius:0 2px 2px 0"></div></div>` : '';
-    return `<div class="video-card video-card--logo" onclick="openContentAndMark('${lessonKey}','${label}',${i})" title="${(l.title||'Lezione '+(i+1)).replace(/"/g,'&quot;')}">
-      <div class="video-card-thumb"></div>
+    return `<div class="video-card${l.cover?'':' video-card--logo'}" onclick="openContentAndMark('${lessonKey}','${label}',${i})" title="${(l.title||'Lezione '+(i+1)).replace(/"/g,'&quot;')}">
+      <div class="video-card-thumb"${l.cover?` style="background:url('${l.cover}') center/cover no-repeat"`:''}></div>
       <span class="video-card-num">${i+1}</span>
       <span id="prog-pill-${lessonKey}-${i}" class="video-card-badge">${done?'<i class="ti ti-circle-check"></i>':''}</span>
       <div class="video-card-play"><i class="ti ti-player-play"></i></div>
